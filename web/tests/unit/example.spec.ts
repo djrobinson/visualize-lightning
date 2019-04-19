@@ -1,10 +1,10 @@
 import { shallowMount } from '@vue/test-utils';
-import HelloWorld from '@/components/HelloWorld.vue';
+import LightningNetwork from '@/components/LightningNetwork.vue';
 
-describe('HelloWorld.vue', () => {
+describe('LightningNetwork.vue', () => {
   it('renders props.msg when passed', () => {
     const msg = 'new message';
-    const wrapper = shallowMount(HelloWorld, {
+    const wrapper = shallowMount(LightningNetwork, {
       propsData: { msg },
     });
     expect(wrapper.text()).toMatch(msg);

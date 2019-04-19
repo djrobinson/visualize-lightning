@@ -1,16 +1,16 @@
 <template>
   <div class="home">
-    <HelloWorld />
+    <LightningNetwork />
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import HelloWorld from '@/components/HelloWorld.vue'; // @ is an alias to /src
+import LightningNetwork from '@/components/LightningNetwork.vue'; // @ is an alias to /src
 
 @Component({
   components: {
-    HelloWorld,
+    LightningNetwork,
   },
 })
 export default class Home extends Vue {}
