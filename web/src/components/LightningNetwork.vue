@@ -40,12 +40,12 @@ export default {
         //   })
 
         axios
-          .get('https://api.mapbox.com/styles/v1/mapbox/light-v9/static/-100.6852,35.3241,5,0,0/300x200?access_token=pk.eyJ1IjoiZGFubnkxcm9iaW5zb24iLCJhIjoiY2p1bTExc21tMHliNzN5bXFoNGZua3MzZyJ9.4RybkDpAAixpKuuCmTeEyA')
-        axios
           .get('https://raw.githubusercontent.com/uber-common/deck.gl-data/master/examples/arc/counties.json')
           .then(response => {
-            this.data = response.data
+            this.data = response.data.features
             console.log("What are describe nodes looking like?", this.data)
+            this._recalculateArcs(this.data)
+            console.log("Did arcs work? ", this.data)
             this.deck = this._renderLayers()
           })
     },
@@ -70,12 +70,12 @@ export default {
 
         const scale = scaleQuantile()
           .domain(arcs.map(a => Math.abs(a.value)))
-          .range(inFlowColors.map((c, i) => i));
 
         arcs.forEach(a => {
           a.gain = Math.sign(a.value);
           a.quantile = scale(Math.abs(a.value));
         });
+        this.arcs = arcs;
       },
       _renderLayers() {
         const data = this.data 
