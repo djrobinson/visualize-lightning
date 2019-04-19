@@ -5,9 +5,9 @@
 			"type": "node",
       "request": "launch",
       "name": "Launch & Debug Application",
-			"args": ["${workspaceRoot}/src/index.ts"],
+			"args": ["${workspaceRoot}/server/src/index.ts"],
 			"runtimeArgs": ["-r", "ts-node/register"],
-			"cwd": "${workspaceRoot}",
+			"cwd": "${workspaceRoot}/server",
 			"protocol": "inspector",
 			"console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
@@ -16,11 +16,11 @@
       "type": "node",
       "request": "launch",
       "name": "Debug Tests",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
       "args": [
         "--opts",
-        "${workspaceFolder}/test/mocha.opts",
-        "${workspaceFolder}/test/**/*.test.ts",
+        "${workspaceFolder}/server/test/mocha.opts",
+        "${workspaceFolder}/server/test/**/*.test.ts",
         "--no-timeouts"
       ],
       "console": "integratedTerminal",
