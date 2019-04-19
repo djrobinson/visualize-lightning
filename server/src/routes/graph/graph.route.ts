@@ -48,7 +48,8 @@ export class GraphRoute extends BaseRoute {
   private async describe(req: Request, res: Response, next: NextFunction) {
     try {
       const { nodes, edges } = await Lightning.client.describeGraph();
-      logger.info(`[GraphRoute] Graph returned: ${nodes}.`);
+      logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
+      logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
       res.json({ nodes, edges });
     } catch (err) {
       res.status(400).json({ error: err });
