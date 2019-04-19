@@ -1,9 +1,17 @@
-import knex from '../../db/knex';
+import BaseDataAccess from './baseDataAccess';
 
-export default class ChannelEdgeData {
+export default class ChannelEdgeData extends BaseDataAccess {
   connection: any;
   constructor() {
-    console.log('Creating Lightning Node');
-    this.connection = knex('shows');
+    const name = 'channel_edge';
+    const columns = [
+      'channel_id',
+      'channel_point',
+      'last_update',
+      'node1_pub',
+      'node2_pub',
+      'capacity',
+    ];
+    super(name, columns, columns);
   }
 }
