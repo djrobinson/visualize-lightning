@@ -80,7 +80,7 @@ export default {
           data: this.arcs,
           getSourcePosition: d => d.source,
           getTargetPosition: d => d.target,
-          getWidth: 2
+          getWidth: 1
         })
 
         map.addLayer(arclayer)
@@ -159,7 +159,7 @@ export default {
   }
   #map {
     width: 100%;
-    height: 500px;
+    height: 800px;
   }
   canvas {
     left: 0;
