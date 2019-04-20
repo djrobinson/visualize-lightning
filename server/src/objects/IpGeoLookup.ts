@@ -25,12 +25,9 @@ class IpGeoLookup {
     }
   }
 
-  public async insertWhereNotExist() {
+  upsertRecord() {
     const data = new IpGeoLookupData();
-    const result = await data.selectById(this.ip);
-    if (!result || !result.length) {
-      data.insert(this);
-    }
+    data.upsert(this);
   }
 }
 

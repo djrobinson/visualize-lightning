@@ -100,7 +100,7 @@ export class GraphRoute extends BaseRoute {
         edgeInstance.lastUpdate = edge.lastUpdate;
         edgeInstance.node1Pub = edge.node1Pub;
         edgeInstance.node2Pub = edge.node2Pub;
-        // edgeInstance.insertIntoDb();
+        edgeInstance.upsertRecord();
       });
 
       res.json({ nodes, edges });

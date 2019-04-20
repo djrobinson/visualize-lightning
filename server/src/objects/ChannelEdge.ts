@@ -22,11 +22,8 @@ export default class ChannelEdge {
     data.insert(this);
   }
 
-  insertWhereNotExist() {
+  upsertRecord() {
     const data = new ChannelEdgeData();
-    const result = data.selectById(this.channelId);
-    if (!result) {
-      data.insert(this);
-    }
+    data.upsert(this);
   }
 }
