@@ -5,15 +5,9 @@ export class IpStack {
   private static baseUrl = 'http://api.ipstack.com';
 
   // TODO: GET A TYPE FOR THE IP RETURNS
-  public static async gatherIpAddresses(
-    nodes: LightningNodeType[],
-  ): Promise<any> {
+  public static async gatherIpAddresses(ipList: string[]): Promise<any> {
     const i = 0;
     const accIndex = 0;
-    const ipList = nodes.reduce((acc, node) => {
-      acc.push(node.addresses[0].addr);
-      return acc;
-    }, []);
     const callList = ipList.map(ip => this.getSingleIpLocation(ip));
     return axios.all(callList);
   }

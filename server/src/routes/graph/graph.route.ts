@@ -1,4 +1,4 @@
-import { LightningNode as LightningNodeType } from '@radar/lnrpc';
+import { LightningNode as LightningNodeType, NodeAddress } from '@radar/lnrpc';
 import { NextFunction, Request, Response } from 'express';
 import ChannelEdge from '../../objects/ChannelEdge';
 import LightningNode from '../../objects/LightningNode';
@@ -16,8 +16,9 @@ import { BaseRoute } from '../route';
  * @apiSuccess 200
  */
 export class GraphRoute extends BaseRoute {
-  public static path = '/graph';
+  public static path: string = '/graph';
   private static instance: GraphRoute;
+  private ipRegex: RegExp = /((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
 
   /**
    * @class GraphRoute
@@ -26,6 +27,7 @@ export class GraphRoute extends BaseRoute {
   private constructor() {
     super();
     this.describe = this.describe.bind(this);
+    this.locateIpAddresses = this.locateIpAddresses.bind(this);
     this.init();
   }
 
@@ -55,13 +57,16 @@ export class GraphRoute extends BaseRoute {
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
 
-      const geoNodes = this.locateIpAddresses(nodes);
+      const geoNodes = await this.locateIpAddresses(nodes);
 
       // TODO: CONVERT TO A BULK UPDATE IF TIME ALLOWS. map instead of forEach, insert all via static method on obj
       nodes.forEach(node => {
         const nodeInstance = new LightningNode();
         nodeInstance.publicKey = node.pubKey;
-        nodeInstance.ipAddress = node.addresses ? node.addresses[0].addr : null;
+        nodeInstance.ipAddress = node.addresses
+          ? this.ipAddressHelper(node)
+          : null;
+        // TODO: MAYBE DROP NETWORK, ADD COLOR. NOT SEEING ANYTHING BUT TCP
         nodeInstance.network = node.addresses
           ? node.addresses[0].network
           : null;
@@ -87,13 +92,33 @@ export class GraphRoute extends BaseRoute {
     next();
   }
 
+  // TODO: GET THAT IP RES TYPE ARRAY RETURNING HERE
   private async locateIpAddresses(nodes: LightningNodeType[]) {
-    const ipAddressNodes = nodes.filter(node => !!node.addresses);
-    const regex = /((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
-    const cleanedIp = ipAddressNodes[0].addresses[0].addr.match(regex);
-    // TODO: refactor to async/await
-    IpStack.getSingleIpLocation(cleanedIp).then(res => {
-      console.log('What are results', res.data);
-    });
+    const cleanIps = nodes.reduce((acc, node) => {
+      if (!!node.addresses) {
+        const ip = this.ipAddressHelper(node);
+        if (ip) acc.push(ip);
+      }
+      return acc;
+    }, []);
+    const cleanedIpForTesting = cleanIps.slice(0, 9);
+    const ipRes = await IpStack.gatherIpAddresses(cleanedIpForTesting);
+    return ipRes;
+  }
+
+  public ipAddressHelper(nodes: LightningNodeType) {
+    const ips = nodes.addresses;
+    const cleanIps = ips.reduce((acc, ip) => {
+      const cleanedIp = ip.addr.match(this.ipRegex);
+      if (cleanedIp && cleanedIp.length) {
+        acc.push(cleanedIp[0]);
+      }
+      return acc;
+    }, []);
+    if (cleanIps.length) {
+      // Is there ever a case where a node could have multiple externalips?
+      return cleanIps[0];
+    }
+    return null;
   }
 }
