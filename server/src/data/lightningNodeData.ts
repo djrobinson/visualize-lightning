@@ -3,7 +3,7 @@ import BaseDataAccess from './baseDataAccess';
 export default class LightningNodeData extends BaseDataAccess {
   connection: any;
   constructor() {
-    const name = 'lightning_node';
+    const name = 'lightning_nodes';
     const columns = [
       'public_key',
       'ip_address',
@@ -12,6 +12,7 @@ export default class LightningNodeData extends BaseDataAccess {
       'latitude',
       'longitude',
     ];
-    super(name, columns, columns);
+    const uniqueIdentifier = 'public_key';
+    super(name, columns, columns, uniqueIdentifier);
   }
 }

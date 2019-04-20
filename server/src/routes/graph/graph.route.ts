@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import LightningNode from '../../objects/LightningNode';
 import { logger } from '../../services';
 import { Lightning } from '../../services/lnd';
 import { BaseRoute } from '../route';
@@ -50,6 +51,17 @@ export class GraphRoute extends BaseRoute {
       const { nodes, edges } = await Lightning.client.describeGraph();
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
+      const node1 = nodes[0];
+      const nodeInstance = new LightningNode();
+      nodeInstance.publicKey = node1.pubKey;
+      // TODO: Pattern matching for ip type
+      if (node1.addresses) {
+        nodeInstance.ipAddress = node1.addresses[0].addr;
+        nodeInstance.network = node1.addresses[0].network;
+      }
+      nodeInstance.alias = node1.alias;
+      nodeInstance.insertIntoDb();
+      const edge1 = edges[0];
       res.json({ nodes, edges });
     } catch (err) {
       res.status(400).json({ error: err });

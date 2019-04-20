@@ -3,11 +3,11 @@ exports.up = function(knex, Promise) {
     return knex.schema.createTable('lightning_nodes', function(table) {
         table.increments();
         table.string('public_key').notNullable().unique();
-        table.string('ip_address').notNullable();
-        table.string('network').notNullable();
-        table.string('alias').notNullable();
+        table.string('ip_address');
+        table.string('network');
+        table.string('alias');
         table.string('latitude');
-        table.integer('longitude');
+        table.string('longitude');
     });
 };
 

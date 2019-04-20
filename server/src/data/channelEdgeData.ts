@@ -3,7 +3,7 @@ import BaseDataAccess from './baseDataAccess';
 export default class ChannelEdgeData extends BaseDataAccess {
   connection: any;
   constructor() {
-    const name = 'channel_edge';
+    const name = 'channel_edges';
     const columns = [
       'channel_id',
       'channel_point',
@@ -12,6 +12,7 @@ export default class ChannelEdgeData extends BaseDataAccess {
       'node2_pub',
       'capacity',
     ];
-    super(name, columns, columns);
+    const uniqueIdentifier = 'channel_id';
+    super(name, columns, columns, uniqueIdentifier);
   }
 }
