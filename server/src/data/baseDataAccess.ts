@@ -32,11 +32,11 @@ export default class BaseDataAccess {
       const bizObjProp = camelCaseWords.join('');
       newRecord[col] = businessObject[bizObjProp];
     });
-    const insertedRecord = knex(this.tableName)
+    knex(this.tableName)
       .returning(this.uniqueIdentifier)
       .insert(newRecord)
-      .then((res: any) => {
-        console.log(`${res} was inserted into ${this.tableName}`);
+      .return((res: any) => {
+        return res;
       });
   }
 

@@ -1,7 +1,9 @@
+import { LightningNode as LightningNodeType } from '@radar/lnrpc';
 import { NextFunction, Request, Response } from 'express';
 import ChannelEdge from '../../objects/ChannelEdge';
 import LightningNode from '../../objects/LightningNode';
 import { logger } from '../../services';
+import { IpStack } from '../../services/ipstack';
 import { Lightning } from '../../services/lnd';
 import { BaseRoute } from '../route';
 
@@ -52,16 +54,19 @@ export class GraphRoute extends BaseRoute {
       const { nodes, edges } = await Lightning.client.describeGraph();
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
+
+      const geoNodes = this.locateIpAddresses(nodes);
+
+      // TODO: CONVERT TO A BULK UPDATE IF TIME ALLOWS. map instead of forEach, insert all via static method on obj
       nodes.forEach(node => {
         const nodeInstance = new LightningNode();
         nodeInstance.publicKey = node.pubKey;
-        // TODO: Pattern matching for ip type, grab first for now
-        if (node.addresses) {
-          nodeInstance.ipAddress = node.addresses[0].addr;
-          nodeInstance.network = node.addresses[0].network;
-        }
+        nodeInstance.ipAddress = node.addresses ? node.addresses[0].addr : null;
+        nodeInstance.network = node.addresses
+          ? node.addresses[0].network
+          : null;
         nodeInstance.alias = node.alias;
-        nodeInstance.insertIntoDb();
+        // nodeInstance.insertIntoDb();
       });
 
       edges.forEach(edge => {
@@ -72,12 +77,22 @@ export class GraphRoute extends BaseRoute {
         edgeInstance.lastUpdate = edge.lastUpdate;
         edgeInstance.node1Pub = edge.node1Pub;
         edgeInstance.node2Pub = edge.node2Pub;
-        edgeInstance.insertIntoDb();
+        // edgeInstance.insertIntoDb();
       });
+
       res.json({ nodes, edges });
     } catch (err) {
       res.status(400).json({ error: err });
     }
     next();
+  }
+
+  private async locateIpAddresses(nodes: LightningNodeType[]) {
+    const ipAddressNodes = nodes.filter(node => !!node.addresses);
+
+    IpStack.gatherIpAddresses(ipAddressNodes).then(results => {
+      console.log('What are results', results);
+      const ipResponses = results.map((r: any) => r.data);
+    });
   }
 }

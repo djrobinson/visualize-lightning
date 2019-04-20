@@ -15,6 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "@radar/lnrpc": "^0.5.2-beta.4",
+    "axios": "^0.18.0",
     "bignumber.js": "^8.0.2",
     "body-parser": "^1.18.3",
     "compression": "^1.7.2",
