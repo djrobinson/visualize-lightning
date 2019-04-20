@@ -3,7 +3,7 @@ import ChannelEdgeData from '../data/channelEdgeData';
 export default class ChannelEdge {
   channelId: string;
   channelPoint: string;
-  lastUpdate: string;
+  lastUpdate: number;
   node1Pub: string;
   node2Pub: string;
   capacity: string;

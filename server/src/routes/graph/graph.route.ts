@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import ChannelEdge from '../../objects/ChannelEdge';
 import LightningNode from '../../objects/LightningNode';
 import { logger } from '../../services';
 import { Lightning } from '../../services/lnd';
@@ -51,17 +52,28 @@ export class GraphRoute extends BaseRoute {
       const { nodes, edges } = await Lightning.client.describeGraph();
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
-      const node1 = nodes[0];
-      const nodeInstance = new LightningNode();
-      nodeInstance.publicKey = node1.pubKey;
-      // TODO: Pattern matching for ip type
-      if (node1.addresses) {
-        nodeInstance.ipAddress = node1.addresses[0].addr;
-        nodeInstance.network = node1.addresses[0].network;
-      }
-      nodeInstance.alias = node1.alias;
-      nodeInstance.insertIntoDb();
-      const edge1 = edges[0];
+      nodes.forEach(node => {
+        const nodeInstance = new LightningNode();
+        nodeInstance.publicKey = node.pubKey;
+        // TODO: Pattern matching for ip type, grab first for now
+        if (node.addresses) {
+          nodeInstance.ipAddress = node.addresses[0].addr;
+          nodeInstance.network = node.addresses[0].network;
+        }
+        nodeInstance.alias = node.alias;
+        nodeInstance.insertIntoDb();
+      });
+
+      edges.forEach(edge => {
+        const edgeInstance = new ChannelEdge();
+        edgeInstance.channelId = edge.channelId;
+        edgeInstance.channelPoint = edge.chanPoint;
+        edgeInstance.capacity = edge.capacity;
+        edgeInstance.lastUpdate = edge.lastUpdate;
+        edgeInstance.node1Pub = edge.node1Pub;
+        edgeInstance.node2Pub = edge.node2Pub;
+        edgeInstance.insertIntoDb();
+      });
       res.json({ nodes, edges });
     } catch (err) {
       res.status(400).json({ error: err });
