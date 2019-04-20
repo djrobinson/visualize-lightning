@@ -3,10 +3,8 @@ import LightningNodeData from '../data/LightningNodeData';
 class LightningNode {
   publicKey: string;
   ipAddress: string;
-  network: string;
   alias: string;
-  latitude: string;
-  longitude: string;
+  color: string;
 
   constructor(publicKey: string = null, ipAddress: string = null) {
     this.publicKey = publicKey;
@@ -20,6 +18,14 @@ class LightningNode {
   insertIntoDb() {
     const data = new LightningNodeData();
     data.insert(this);
+  }
+
+  insertWhereNotExist() {
+    const data = new LightningNodeData();
+    const result = data.selectById(this.publicKey);
+    if (!result) {
+      data.insert(this);
+    }
   }
 }
 

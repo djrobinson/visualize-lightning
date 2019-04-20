@@ -21,4 +21,12 @@ export default class ChannelEdge {
     const data = new ChannelEdgeData();
     data.insert(this);
   }
+
+  insertWhereNotExist() {
+    const data = new ChannelEdgeData();
+    const result = data.selectById(this.channelId);
+    if (!result) {
+      data.insert(this);
+    }
+  }
 }
