@@ -20,12 +20,9 @@ class LightningNode {
     data.insert(this);
   }
 
-  insertWhereNotExist() {
+  upsertRecord() {
     const data = new LightningNodeData();
-    const result = data.selectById(this.publicKey);
-    if (!result) {
-      data.insert(this);
-    }
+    data.upsert(this);
   }
 }
 

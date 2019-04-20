@@ -1,6 +1,7 @@
 import { LightningNode as LightningNodeType, NodeAddress } from '@radar/lnrpc';
 import { NextFunction, Request, Response } from 'express';
 import ChannelEdge from '../../objects/ChannelEdge';
+import IpGeoLookup from '../../objects/IpGeoLookup';
 import LightningNode from '../../objects/LightningNode';
 import { logger } from '../../services';
 import { IpStack } from '../../services/ipstack';
@@ -57,7 +58,27 @@ export class GraphRoute extends BaseRoute {
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
 
-      const geoNodes = await this.locateIpAddresses(nodes);
+      // const geoNodes = await this.locateIpAddresses(nodes);
+
+      // geoNodes.forEach((geoRes: any) => {
+      //   const geo = geoRes.data;
+      //   const ipGeoInstance = new IpGeoLookup();
+      //   ipGeoInstance.ip = geo['ip'];
+      //   ipGeoInstance.type = geo['type'];
+      //   ipGeoInstance.continentCode = geo['continent_code'];
+      //   ipGeoInstance.continentName = geo['continent_name'];
+      //   ipGeoInstance.countryCode = geo['country_code'];
+      //   ipGeoInstance.countryName = geo['country_name'];
+      //   ipGeoInstance.regionCode = geo['region_code'];
+      //   ipGeoInstance.regionName = geo['region_name'];
+      //   ipGeoInstance.city = geo['city'];
+      //   ipGeoInstance.zip = geo['zip'];
+      //   ipGeoInstance.latitude = geo['latitude'];
+      //   ipGeoInstance.longitude = geo['longitude'];
+      //   ipGeoInstance.countryFlag = geo['location']['country_flag'];
+      //   ipGeoInstance.countryFlagEmoji = geo['location']['country_flag_emoji'];
+      //   ipGeoInstance.insertWhereNotExist();
+      // });
 
       // TODO: CONVERT TO A BULK UPDATE IF TIME ALLOWS. map instead of forEach, insert all via static method on obj
       nodes.forEach(node => {
@@ -66,12 +87,9 @@ export class GraphRoute extends BaseRoute {
         nodeInstance.ipAddress = node.addresses
           ? this.ipAddressHelper(node)
           : null;
-        // TODO: MAYBE DROP NETWORK, ADD COLOR. NOT SEEING ANYTHING BUT TCP
-        nodeInstance.network = node.addresses
-          ? node.addresses[0].network
-          : null;
         nodeInstance.alias = node.alias;
-        // nodeInstance.insertIntoDb();
+        nodeInstance.color = node.color;
+        nodeInstance.upsertRecord();
       });
 
       edges.forEach(edge => {
@@ -101,7 +119,7 @@ export class GraphRoute extends BaseRoute {
       }
       return acc;
     }, []);
-    const cleanedIpForTesting = cleanIps.slice(0, 9);
+    const cleanedIpForTesting = cleanIps.slice(0, 2);
     const ipRes = await IpStack.gatherIpAddresses(cleanedIpForTesting);
     return ipRes;
   }

@@ -25,10 +25,10 @@ class IpGeoLookup {
     }
   }
 
-  insertWhereNotExist() {
+  public async insertWhereNotExist() {
     const data = new IpGeoLookupData();
-    const result = data.selectById(this.ip);
-    if (!result) {
+    const result = await data.selectById(this.ip);
+    if (!result || !result.length) {
       data.insert(this);
     }
   }
