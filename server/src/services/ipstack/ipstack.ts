@@ -8,30 +8,18 @@ export class IpStack {
   public static async gatherIpAddresses(
     nodes: LightningNodeType[],
   ): Promise<any> {
-    console.log(`What are nodes: ${nodes}`);
-    let i = 0;
-    let accIndex = 0;
-    const batchedIps = nodes.reduce((acc, node) => {
-      if (i === 0) {
-        acc.push([node.addresses[0].addr]);
-        i++;
-      } else if (i < 49) {
-        i++;
-        acc[accIndex].push(node.addresses[0].addr);
-      } else {
-        acc[accIndex].push(node.addresses[0].addr);
-        i = 0;
-        accIndex++;
-      }
+    const i = 0;
+    const accIndex = 0;
+    const ipList = nodes.reduce((acc, node) => {
+      acc.push(node.addresses[0].addr);
       return acc;
     }, []);
-    const callList = batchedIps.map(ipList => this.sendIpBatch(ipList));
+    const callList = ipList.map(ip => this.getSingleIpLocation(ip));
     return axios.all(callList);
   }
 
-  private static async sendIpBatch(ipAddresses: string[]): Promise<any> {
+  public static async getSingleIpLocation(ipAddress: string): Promise<any> {
     const apiKey = process.env.IPSTACK_API_KEY;
-    const joinedIps = ipAddresses.join(',');
-    return axios.get(`${this.baseUrl}/${joinedIps}?access_key=${apiKey}`);
+    return axios.get(`${this.baseUrl}/${ipAddress}?access_key=${apiKey}`);
   }
 }
