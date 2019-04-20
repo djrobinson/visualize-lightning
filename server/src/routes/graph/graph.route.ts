@@ -90,9 +90,10 @@ export class GraphRoute extends BaseRoute {
   private async locateIpAddresses(nodes: LightningNodeType[]) {
     const ipAddressNodes = nodes.filter(node => !!node.addresses);
 
-    IpStack.gatherIpAddresses(ipAddressNodes).then(results => {
-      console.log('What are results', results);
-      const ipResponses = results.map((r: any) => r.data);
+    const gather = IpStack.gatherIpAddresses(ipAddressNodes).then(results => {
+      results.map((res: any) => {
+        console.log('What are results', res.data);
+      });
     });
   }
 }
