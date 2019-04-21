@@ -13,6 +13,46 @@ import {GeoJsonLayer, ArcLayer, ScatterplotLayer} from '@deck.gl/layers';
 import {scaleQuantile} from 'd3-scale';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
+class ArcBrushingLayer extends ArcLayer {
+      getShaders() {
+        // use customized shaders
+        return Object.assign({}, super.getShaders(), {
+          inject: {
+            'vs:#decl': `
+uniform vec2 mousePosition;
+uniform float brushRadius;
+            `,
+            'vs:#main-end': `
+float brushRadiusPixels = project_scale(brushRadius);
+
+vec2 sourcePosition = project_position(instancePositions.xy);
+bool isSourceInBrush = distance(sourcePosition, mousePosition) <= brushRadiusPixels;
+
+vec2 targetPosition = project_position(instancePositions.zw);
+bool isTargetInBrush = distance(targetPosition, mousePosition) <= brushRadiusPixels;
+
+if (!isSourceInBrush && !isTargetInBrush) {
+  vColor.a = 0.0;
+}
+            `,
+            'fs:#main-start': `
+if (vColor.a == 0.0) discard;
+            `
+          }
+        });
+      }
+
+      draw(opts) {
+        const {brushRadius = 50, mousePosition} = this.props;
+        // add uniforms
+        const uniforms = Object.assign({}, opts.uniforms, {
+          brushRadius: brushRadius,
+          mousePosition: mousePosition ?
+            this.projectPosition(this.unproject(mousePosition)).slice(0, 2) : [0, 0]
+        });
+        super.draw(Object.assign({}, opts, {uniforms}));
+      }
+  }
 
 export default Vue.extend({
   data(){
@@ -64,7 +104,8 @@ export default Vue.extend({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v9',
         center: [-118.35, 33.83],
-        pitch: 30,
+        pitch: 45,
+        bearing: 0,
         zoom: 5
       });
       map.on('load', () => {
@@ -87,12 +128,38 @@ export default Vue.extend({
           type: ScatterplotLayer,
           getRadius: d => d.radius,
           getColor: d => d.color,
+          onHover: d => {
+            console.log("Maybe")
+          },
           radiusMinPixels: 3,
-          data: this.scatterData
+          data: this.scatterData,
       })
 
-      map.addLayer(scatterplotlayer)
       map.addLayer(arclayer)
+      map.addLayer(scatterplotlayer)
+
+      var popup = new mapboxgl.Popup({closeOnClick: false})
+        .setLngLat([-96, 37.8])
+        .setHTML('<h1>Hello World!</h1>')
+        .addTo(map);
+      map.on('mousemove', ({point, x, y}) => {
+        console.log("Movinnn", point, x, y)
+        if (arclayer) {
+          arclayer.setProps({mousePosition: [point.x, point.y]});
+        }
+      });
+      var popup = new mapboxgl.Popup({ offset: 25 })
+      .setText('Construction on the Washington Monument began in 1848.');
+      
+      // create DOM element for the marker
+      var el = document.createElement('div');
+      el.id = 'marker';
+      
+      // create the marker
+      new mapboxgl.Marker(el)
+      .setLngLat([-118.35, 33.83])
+      .setPopup(popup) // sets a popup on this marker
+      .addTo(map);
     },
     _recalculateArcs(edges) {
       if (!edges) {
@@ -138,5 +205,13 @@ export default Vue.extend({
   }
   canvas {
     left: 0;
+  }
+  #marker {
+  background-image: url('https://docs.mapbox.com/mapbox-gl-js/assets/washington-monument.jpg');
+  background-size: cover;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
   }
 </style>
