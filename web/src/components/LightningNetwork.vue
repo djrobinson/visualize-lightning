@@ -22,6 +22,7 @@ export default Vue.extend({
           graph: null,
           pong: null,
           arcs: null,
+          nodes: null,
           map: null,
           INITIAL_VIEW_STATE: {
             longitude: -100,
@@ -33,14 +34,31 @@ export default Vue.extend({
           }
       }
   },
-  mounted(){
+  async mounted(){
       mapboxgl.accessToken = 'pk.eyJ1IjoiZGFubnkxcm9iaW5zb24iLCJhIjoiY2p1bTExc21tMHliNzN5bXFoNGZua3MzZyJ9.4RybkDpAAixpKuuCmTeEyA'
-      axios
-        .get('https://raw.githubusercontent.com/uber-common/deck.gl-data/master/examples/arc/counties.json')
-        .then(response => {
-          this.data = response.data.features
-          this._recalculateArcs(this.data)
-        })
+      const response = await axios.get('http://localhost:3000/api/networkmap/ips')
+      console.log("What is the response for network map: ", response);
+      this._recalculateArcs(response.data.edges);
+      this.nodes = response.data.edges.reduce((acc, edge) => {
+        if (!acc[edge.node1_pub]) {
+          acc[edge.node1_pub] = {
+            position: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
+            color: [0, 0, 0],
+            radius: 1000
+          }
+        }
+        if (!acc[edge.node2_pub]) {
+          acc[edge.node2_pub] = {
+            position: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
+            color: [0, 0, 0],
+            radius: 1000
+          }
+        }
+        return acc;
+      }, {})
+      this.scatterData = Object.values(this.nodes);
+      console.log("howd nodes end up ", this.scatterData)
+
 
       const map = new mapboxgl.Map({
         container: 'map',
@@ -55,23 +73,14 @@ export default Vue.extend({
   },
   methods: {
     _mapLoaded(map) {
-      
-      const geojsonlayer = new MapboxLayer({
-        id: 'geojson',
-        type: GeoJsonLayer,
-        data: this.data,
-        stroked: false,
-        filled: true,
-        getFillColor: [0, 0, 0, 0],
-        pickable: true
-      })
+  
       const arclayer = new MapboxLayer({
         id: 'arc',
         type: ArcLayer,
         data: this.arcs,
         getSourcePosition: d => d.source,
         getTargetPosition: d => d.target,
-        getWidth: 3
+        getWidth: 2
       })
       const scatterplotlayer = new MapboxLayer({
           id: 'scatter',
@@ -79,35 +88,22 @@ export default Vue.extend({
           getRadius: d => d.radius,
           getColor: d => d.color,
           radiusMinPixels: 3,
-          data: [{
-              position: [-118.35, 33.83],
-              color: [255, 0, 0],
-              radius: 10000
-          }]
+          data: this.scatterData
       })
 
       map.addLayer(scatterplotlayer)
       map.addLayer(arclayer)
-      map.addLayer(geojsonlayer)
-      
-
-      
     },
-    _recalculateArcs(data, selectedCounty = null) {
-      if (!data) {
+    _recalculateArcs(edges) {
+      if (!edges) {
         return;
       }
-      if (!selectedCounty) {
-        selectedCounty = data.find(f => f.properties.name === 'Los Angeles, CA');
-      }
-      const {flows, centroid} = selectedCounty.properties;
 
-      const arcs = Object.keys(flows).map(toId => {
-        const f = data[toId];
+      const arcs = edges.map(edge => {
         return {
-          source: centroid,
-          target: f.properties.centroid,
-          value: flows[toId]
+          source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
+          target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
+          value: parseInt(edge.capacity)
         };
       });
       
@@ -122,34 +118,6 @@ export default Vue.extend({
       console.log("Calculated arcs: ", arcs);
       this.arcs = arcs;
     },
-    _renderLayers() {
-      const data = this.data 
-      const strokeWidth = 3
-      const deck = new Deck({
-        canvas: 'network-canvas',
-        initialViewState: this.INITIAL_VIEW_STATE,
-        controller: true,
-        layers: [
-            new GeoJsonLayer({
-              id: 'geojson',
-              data,
-              stroked: false,
-              filled: true,
-              getFillColor: [0, 0, 0, 0],
-              pickable: true
-            }),
-            new ArcLayer({
-              id: 'arc',
-              data: this.arcs,
-              getSourcePosition: d => d.source,
-              getTargetPosition: d => d.target,
-              getWidth: strokeWidth
-            }),
-
-          ]
-      })
-      return deck;
-    }
   }
 })
 </script>

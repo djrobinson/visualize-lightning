@@ -3,7 +3,6 @@ import { NextFunction, Request, Response } from 'express';
 import ChannelEdge from '../../objects/ChannelEdge';
 import LightningNode from '../../objects/LightningNode';
 import { logger } from '../../services';
-// import { Lightning } from '../../services/lnd';
 import { BaseRoute } from '../route';
 
 /**
@@ -24,13 +23,13 @@ export class NetworkMapRoute extends BaseRoute {
    */
   private constructor() {
     super();
-    this.allEdgesIpNodes = this.allEdgesIpNodes.bind(this);
+    this.ips = this.ips.bind(this);
     this.init();
   }
 
   private init() {
     logger.info('[NetworkRoute] Creating network route.');
-    this.router.get('/networkMap', this.allEdgesIpNodes);
+    this.router.get('/ips', this.ips);
   }
 
   static get router() {
@@ -42,19 +41,13 @@ export class NetworkMapRoute extends BaseRoute {
 
   /**
    * Returns prestructured network from the point of
-   * @class NetworkMapRoute
    * @method get
    * @param req {Request}
    * @param res {Response}
    * @param next {NextFunction}
    */
-  private async allEdgesIpNodes(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
+  public async ips(req: Request, res: Response, next: NextFunction) {
     try {
-      // TODO: GET NODES, EDGES IN SAME CALL
       const edges = await LightningNode.getNodesAndEdgesIpsIpOnly();
       res.json({ edges });
     } catch (err) {
