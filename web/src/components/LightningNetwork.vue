@@ -13,46 +13,6 @@ import {GeoJsonLayer, ArcLayer, ScatterplotLayer} from '@deck.gl/layers';
 import {scaleQuantile} from 'd3-scale';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
-class ArcBrushingLayer extends ArcLayer {
-      getShaders() {
-        // use customized shaders
-        return Object.assign({}, super.getShaders(), {
-          inject: {
-            'vs:#decl': `
-uniform vec2 mousePosition;
-uniform float brushRadius;
-            `,
-            'vs:#main-end': `
-float brushRadiusPixels = project_scale(brushRadius);
-
-vec2 sourcePosition = project_position(instancePositions.xy);
-bool isSourceInBrush = distance(sourcePosition, mousePosition) <= brushRadiusPixels;
-
-vec2 targetPosition = project_position(instancePositions.zw);
-bool isTargetInBrush = distance(targetPosition, mousePosition) <= brushRadiusPixels;
-
-if (!isSourceInBrush && !isTargetInBrush) {
-  vColor.a = 0.0;
-}
-            `,
-            'fs:#main-start': `
-if (vColor.a == 0.0) discard;
-            `
-          }
-        });
-      }
-
-      draw(opts) {
-        const {brushRadius = 50, mousePosition} = this.props;
-        // add uniforms
-        const uniforms = Object.assign({}, opts.uniforms, {
-          brushRadius: brushRadius,
-          mousePosition: mousePosition ?
-            this.projectPosition(this.unproject(mousePosition)).slice(0, 2) : [0, 0]
-        });
-        super.draw(Object.assign({}, opts, {uniforms}));
-      }
-  }
 
 export default Vue.extend({
   data(){
@@ -64,6 +24,7 @@ export default Vue.extend({
           arcs: null,
           nodes: null,
           map: null,
+          selectedNode: null,
           INITIAL_VIEW_STATE: {
             longitude: -100,
             latitude: 40.7,
@@ -78,26 +39,52 @@ export default Vue.extend({
       mapboxgl.accessToken = 'pk.eyJ1IjoiZGFubnkxcm9iaW5zb24iLCJhIjoiY2p1bTExc21tMHliNzN5bXFoNGZua3MzZyJ9.4RybkDpAAixpKuuCmTeEyA'
       const response = await axios.get('http://localhost:3000/api/networkmap/ips')
       console.log("What is the response for network map: ", response);
+      this.selectedNode = '038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9';
       this._recalculateArcs(response.data.edges);
       this.nodes = response.data.edges.reduce((acc, edge) => {
         if (!acc[edge.node1_pub]) {
           acc[edge.node1_pub] = {
+            public_key: edge.node1_pub,
             position: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
             color: [0, 0, 0],
-            radius: 1000
+            radius: 1000,
+            edgeCount: 1,
+            alias: edge.node1_alias,
+            ip: edge.node1_ip_address,
+            city: edge.node1_city,
+            country: edge.node1_country_name,
+            region: edge.node1_region_name
+
           }
         }
         if (!acc[edge.node2_pub]) {
           acc[edge.node2_pub] = {
+            public_key: edge.node2_pub,
             position: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
             color: [0, 0, 0],
-            radius: 1000
+            radius: 1000,
+            edgeCount: 1,
+            alias: edge.node2_alias,
+            ip: edge.node2_ip_address,
+            city: edge.node2_city,
+            country: edge.node2_country_name,
+            region: edge.node2_region_name
           }
+        }
+        if (acc[edge.node2_pub]) {
+          acc[edge.node2_pub].edgeCount++;
+        }
+        if (acc[edge.node2_pub]) {
+          acc[edge.node2_pub].edgeCount++;
         }
         return acc;
       }, {})
-      this.scatterData = Object.values(this.nodes);
-      console.log("howd nodes end up ", this.scatterData)
+      this.scatterData = Object.values(this.nodes).sort((a, b) => (a.edgeCount < b.edgeCount) ? 1 : -1);
+      
+      
+      console.log("howd nodes end up ", this.selectedNode)
+
+
 
 
       const map = new mapboxgl.Map({
@@ -128,9 +115,6 @@ export default Vue.extend({
           type: ScatterplotLayer,
           getRadius: d => d.radius,
           getColor: d => d.color,
-          onHover: d => {
-            console.log("Maybe")
-          },
           radiusMinPixels: 3,
           data: this.scatterData,
       })
@@ -138,41 +122,33 @@ export default Vue.extend({
       map.addLayer(arclayer)
       map.addLayer(scatterplotlayer)
 
-      var popup = new mapboxgl.Popup({closeOnClick: false})
-        .setLngLat([-96, 37.8])
-        .setHTML('<h1>Hello World!</h1>')
-        .addTo(map);
-      map.on('mousemove', ({point, x, y}) => {
-        console.log("Movinnn", point, x, y)
-        if (arclayer) {
-          arclayer.setProps({mousePosition: [point.x, point.y]});
-        }
-      });
-      var popup = new mapboxgl.Popup({ offset: 25 })
-      .setText('Construction on the Washington Monument began in 1848.');
+      // Object.keys(this.nodes).forEach((node, i) => {
+      //   // create the marker
+      //   if (this.nodes[node].position[0]) {
+      //     var popup = new mapboxgl.Popup({closeOnClick: false})
+      //     .setLngLat(this.nodes[node].position)
+      //     .setHTML(`<h1>Hello World!</h1>
+      //     <button>Will this work?</button>
+      //     `)
+      //     .addTo(map);
+      //   }
+      // })
       
-      // create DOM element for the marker
-      var el = document.createElement('div');
-      el.id = 'marker';
       
-      // create the marker
-      new mapboxgl.Marker(el)
-      .setLngLat([-118.35, 33.83])
-      .setPopup(popup) // sets a popup on this marker
-      .addTo(map);
     },
     _recalculateArcs(edges) {
-      if (!edges) {
-        return;
-      }
+      console.log("What is recalc input",edges)
 
-      const arcs = edges.map(edge => {
-        return {
-          source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
-          target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
-          value: parseInt(edge.capacity)
-        };
-      });
+      const arcs = edges.reduce((acc, edge) => {
+        if (this.selectedNode === edge.node1_public_key || this.selectedNode === edge.node2_public_key) {
+          acc.push({
+            source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
+            target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
+            value: parseInt(edge.capacity)
+          });
+        }
+        return acc;
+      }, []);
       
 
       const scale = scaleQuantile()
