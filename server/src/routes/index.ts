@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from 'express';
 import { logger } from '../services';
 import { GraphRoute } from './graph';
 import { InvoiceRoute } from './invoice';
+import { NetworkMapRoute } from './networkMap';
 import { PingRoute } from './ping';
 import { BaseRoute } from './route';
 
@@ -44,9 +45,10 @@ export class ApiRoutes extends BaseRoute {
     logger.info('[ApiRoute] Creating api routes.');
 
     this.router.get('/', this.get);
-    this.router.use(PingRoute.path, PingRoute.router);
-    this.router.use(InvoiceRoute.path, InvoiceRoute.router);
-    this.router.use(GraphRoute.path, GraphRoute.router);
+    this.router.use(NetworkMapRoute.path, NetworkMapRoute.router);
+    // this.router.use(PingRoute.path, PingRoute.router);
+    // this.router.use(InvoiceRoute.path, InvoiceRoute.router);
+    // this.router.use(GraphRoute.path, GraphRoute.router);
   }
 
   /**

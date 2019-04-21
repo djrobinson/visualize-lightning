@@ -24,6 +24,12 @@ class LightningNode {
     const data = new LightningNodeData();
     data.upsert(this);
   }
+
+  public static async getNodesAndEdgesIpsIpOnly() {
+    const data = new LightningNodeData();
+    const res = await data.selectNodesAndEdgesIpOnly();
+    return res;
+  }
 }
 
 export default LightningNode;

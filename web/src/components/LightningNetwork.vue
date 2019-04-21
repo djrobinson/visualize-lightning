@@ -39,10 +39,7 @@ export default Vue.extend({
         .get('https://raw.githubusercontent.com/uber-common/deck.gl-data/master/examples/arc/counties.json')
         .then(response => {
           this.data = response.data.features
-          console.log("What are describe nodes looking like?", this.data)
           this._recalculateArcs(this.data)
-          console.log("Did arcs work? ", this.data)
-
         })
 
       const map = new mapboxgl.Map({
@@ -74,11 +71,25 @@ export default Vue.extend({
         data: this.arcs,
         getSourcePosition: d => d.source,
         getTargetPosition: d => d.target,
-        getWidth: 1
+        getWidth: 3
+      })
+      const scatterplotlayer = new MapboxLayer({
+          id: 'scatter',
+          type: ScatterplotLayer,
+          getRadius: d => d.radius,
+          getColor: d => d.color,
+          radiusMinPixels: 3,
+          data: [{
+              position: [-118.35, 33.83],
+              color: [255, 0, 0],
+              radius: 10000
+          }]
       })
 
+      map.addLayer(scatterplotlayer)
       map.addLayer(arclayer)
       map.addLayer(geojsonlayer)
+      
 
       
     },
@@ -99,6 +110,7 @@ export default Vue.extend({
           value: flows[toId]
         };
       });
+      
 
       const scale = scaleQuantile()
         .domain(arcs.map(a => Math.abs(a.value)))
@@ -107,11 +119,12 @@ export default Vue.extend({
         a.gain = Math.sign(a.value);
         a.quantile = scale(Math.abs(a.value));
       });
+      console.log("Calculated arcs: ", arcs);
       this.arcs = arcs;
     },
     _renderLayers() {
       const data = this.data 
-      const strokeWidth = 2
+      const strokeWidth = 3
       const deck = new Deck({
         canvas: 'network-canvas',
         initialViewState: this.INITIAL_VIEW_STATE,
@@ -131,7 +144,8 @@ export default Vue.extend({
               getSourcePosition: d => d.source,
               getTargetPosition: d => d.target,
               getWidth: strokeWidth
-            })
+            }),
+
           ]
       })
       return deck;

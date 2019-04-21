@@ -10,7 +10,6 @@ import { BaseRoute } from '../route';
 
 /**
  * @api {get} /graph Graph Request
- * @api {post} /graph/pay Pay Graph Request
  * @apiName Graph
  * @apiGroup Graph
  *
