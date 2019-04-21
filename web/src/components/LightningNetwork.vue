@@ -23,7 +23,9 @@ export default Vue.extend({
           pong: null,
           arcs: null,
           nodes: null,
+          edges: null,
           map: null,
+          activeNodes: [],
           selectedNode: null,
           INITIAL_VIEW_STATE: {
             longitude: -100,
@@ -40,9 +42,10 @@ export default Vue.extend({
       const response = await axios.get('http://localhost:3000/api/networkmap/ips')
       console.log("What is the response for network map: ", response);
       this.selectedNode = '038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9';
-      this._recalculateArcs(response.data.edges);
+      this.edges = response.data.edges;
+      this._recalculateArcs();
       this.nodes = response.data.edges.reduce((acc, edge) => {
-        if (!acc[edge.node1_pub]) {
+        if (!acc[edge.node1_pub] && parseFloat(edge.node1_longitude) && parseFloat(edge.node1_latitude)) {
           acc[edge.node1_pub] = {
             public_key: edge.node1_pub,
             position: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
@@ -54,10 +57,9 @@ export default Vue.extend({
             city: edge.node1_city,
             country: edge.node1_country_name,
             region: edge.node1_region_name
-
           }
         }
-        if (!acc[edge.node2_pub]) {
+        if (!acc[edge.node2_pub] && parseFloat(edge.node2_longitude) && parseFloat(edge.node2_latitude)) {
           acc[edge.node2_pub] = {
             public_key: edge.node2_pub,
             position: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
@@ -81,11 +83,7 @@ export default Vue.extend({
       }, {})
       this.scatterData = Object.values(this.nodes).sort((a, b) => (a.edgeCount < b.edgeCount) ? 1 : -1);
       
-      
-      console.log("howd nodes end up ", this.selectedNode)
-
-
-
+      console.log("howd nodes end up ", this.nodes)
 
       const map = new mapboxgl.Map({
         container: 'map',
@@ -121,26 +119,32 @@ export default Vue.extend({
 
       map.addLayer(arclayer)
       map.addLayer(scatterplotlayer)
-
-      // Object.keys(this.nodes).forEach((node, i) => {
-      //   // create the marker
-      //   if (this.nodes[node].position[0]) {
-      //     var popup = new mapboxgl.Popup({closeOnClick: false})
-      //     .setLngLat(this.nodes[node].position)
-      //     .setHTML(`<h1>Hello World!</h1>
-      //     <button>Will this work?</button>
-      //     `)
-      //     .addTo(map);
-      //   }
-      // })
-      
-      
+      this.activeNodes.forEach((node, i) => {
+        // create the marker
+        const currentNode = this.nodes[node];
+        if (currentNode && currentNode.position) {
+          var popup = new mapboxgl.Popup({closeOnClick: false})
+          .setLngLat(currentNode.position)
+          .setHTML(`<button v-on:click="selectNode">Choose</button>`)
+          .addTo(map);
+        }
+      })
     },
-    _recalculateArcs(edges) {
-      console.log("What is recalc input",edges)
-
+    selectNode() {
+      console.log("Calling select node")
+      this._recalculateArcs()
+    },
+    _recalculateArcs() {
+      const edges = this.edges
+      this.activeNodes = [];
       const arcs = edges.reduce((acc, edge) => {
-        if (this.selectedNode === edge.node1_public_key || this.selectedNode === edge.node2_public_key) {
+        if (this.selectedNode === edge.node1_pub || this.selectedNode === edge.node2_pub) {
+          if (this.activeNodes.indexOf(edge.node1_pub) === -1) {
+            this.activeNodes.push(edge.node1_pub)
+          }
+          if (this.activeNodes.indexOf(edge.node2_pub) === -1) {
+            this.activeNodes.push(edge.node2_pub)
+          }
           acc.push({
             source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
             target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
