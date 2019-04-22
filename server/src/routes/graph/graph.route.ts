@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import ChannelEdge from '../../objects/ChannelEdge';
 import IpGeoLookup from '../../objects/IpGeoLookup';
 import LightningNode from '../../objects/LightningNode';
+import RoutingPolicy from '../../objects/RoutingPolicy';
 import { logger } from '../../services';
 import { IpStack } from '../../services/ipstack';
 import { Lightning } from '../../services/lnd';
@@ -100,8 +101,26 @@ export class GraphRoute extends BaseRoute {
         edgeInstance.node1Pub = edge.node1Pub;
         edgeInstance.node2Pub = edge.node2Pub;
         edgeInstance.upsertRecord();
+        const node1Policy = new RoutingPolicy();
+        node1Policy.policyOwnerPublicKey = edge.node1Pub;
+        if (edge.node1Policy) {
+          node1Policy.timeLockDelta = edge.node1Policy.timeLockDelta;
+          node1Policy.minHtlc = edge.node1Policy.minHtlc;
+          node1Policy.feeBaseMsat = edge.node1Policy.feeBaseMsat;
+          node1Policy.feeRateMilliMsat = edge.node1Policy.feeRateMilliMsat;
+          node1Policy.disabled = edge.node1Policy.disabled;
+          node1Policy.upsertRecord();
+        }
+        const node2Policy = new RoutingPolicy();
+        if (edge.node2Policy) {
+          node2Policy.timeLockDelta = edge.node2Policy.timeLockDelta;
+          node2Policy.minHtlc = edge.node2Policy.minHtlc;
+          node2Policy.feeBaseMsat = edge.node2Policy.feeBaseMsat;
+          node2Policy.feeRateMilliMsat = edge.node2Policy.feeRateMilliMsat;
+          node2Policy.disabled = edge.node2Policy.disabled;
+          node2Policy.upsertRecord();
+        }
       });
-
       res.json({ nodes, edges });
     } catch (err) {
       res.status(400).json({ error: err });

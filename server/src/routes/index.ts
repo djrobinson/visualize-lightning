@@ -46,9 +46,8 @@ export class ApiRoutes extends BaseRoute {
 
     this.router.get('/', this.get);
     this.router.use(NetworkMapRoute.path, NetworkMapRoute.router);
-    // this.router.use(PingRoute.path, PingRoute.router);
-    // this.router.use(InvoiceRoute.path, InvoiceRoute.router);
-    // this.router.use(GraphRoute.path, GraphRoute.router);
+    this.router.use(PingRoute.path, PingRoute.router);
+    this.router.use(GraphRoute.path, GraphRoute.router);
   }
 
   /**
