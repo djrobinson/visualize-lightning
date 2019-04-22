@@ -26,6 +26,8 @@ export default Vue.extend({
           edges: null,
           map: null,
           activeNodes: [],
+          nodesInView: [],
+          popups: [],
           selectedNode: null,
           INITIAL_VIEW_STATE: {
             longitude: -100,
@@ -43,6 +45,7 @@ export default Vue.extend({
       console.log("What is the response for network map: ", response);
       this.selectedNode = '038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9';
       this.edges = response.data.edges;
+      this.popups = [];
       this._recalculateArcs();
       this.nodes = response.data.edges.reduce((acc, edge) => {
         if (!acc[edge.node1_pub] && parseFloat(edge.node1_longitude) && parseFloat(edge.node1_latitude)) {
@@ -82,8 +85,6 @@ export default Vue.extend({
         return acc;
       }, {})
       this.scatterData = Object.values(this.nodes).sort((a, b) => (a.edgeCount < b.edgeCount) ? 1 : -1);
-      
-      console.log("howd nodes end up ", this.nodes)
 
       const map = new mapboxgl.Map({
         container: 'map',
@@ -119,16 +120,68 @@ export default Vue.extend({
 
       map.addLayer(arclayer)
       map.addLayer(scatterplotlayer)
-      this.activeNodes.forEach((node, i) => {
-        // create the marker
-        const currentNode = this.nodes[node];
-        if (currentNode && currentNode.position) {
-          var popup = new mapboxgl.Popup({closeOnClick: false})
-          .setLngLat(currentNode.position)
-          .setHTML(`<button v-on:click="selectNode">Choose</button>`)
-          .addTo(map);
+
+      const popups = this.popups;
+      const scatterData = this.scatterData;
+       map.on('click', function (e) {
+          console.log("What click?", e);
+          const currZoom = map.getZoom();
+        if (currZoom === 10) {
+          this.nodesInView = []
+          map.setZoom(5);
+          map.setCenter(e.lngLat);
+          if (this.popups) {
+            this.popups.forEach(popup => popup.remove());
+          } 
+          
+        } else {
+          map.setZoom(10);
+          map.setCenter(e.lngLat);
+          const bounds = map.getBounds();
+          
+          
+          this.nodesInView = scatterData.filter(node => {
+            if (bounds._sw.lng < node.position[0] && node.position[0] < bounds._ne.lng && bounds._sw.lat < node.position[1] && node.position[1] < bounds._ne.lat) {
+              const currentNode = node;
+                if (currentNode && currentNode.position) {
+                  var popup = new mapboxgl.Popup({closeOnClick: false})
+                  .setLngLat(currentNode.position)
+                  .setHTML(`<p >Public Key: ${currentNode.public_key.slice(0,5)}...${currentNode.public_key.slice(-5,-1)}</p>
+                    <p >Alias: ${currentNode.alias || ''}</p>
+                    <p >Color: ${currentNode.color}</p>
+                    <p >Channel Count: ${currentNode.egeCount}</p>
+                    <p >IP: ${currentNode.ip || ''}</p>
+                    <p >City: ${currentNode.city}</p>
+                    <p >Region${currentNode.region}</p>
+                    <p >IP: ${currentNode.country}</p>
+                  `)
+                  .addTo(map);
+                  popups.push(popup);
+                }
+              console.log("One worked")
+              return true
+            } else {
+              return false
+            };
+          });
+          this.popups = popups;
+          console.log("Nodes in view", this.nodesInView);
         }
-      })
+        var features = map.queryRenderedFeatures(e.point, { layers: ['scatter', 'arc'] });
+
+        if (!features.length) {
+            return;
+        }
+
+        var feature = features[0];
+        //Use Feature and put your code
+        // Populate the popup and set its coordinates
+        // based on the feature found.
+        var popup = new mapboxgl.Popup()
+            .setLngLat(feature.geometry.coordinates)
+            .setHTML(feature.properties.description)
+            .addTo(map);
+      });
     },
     selectNode() {
       console.log("Calling select node")
@@ -162,7 +215,6 @@ export default Vue.extend({
         a.gain = Math.sign(a.value);
         a.quantile = scale(Math.abs(a.value));
       });
-      console.log("Calculated arcs: ", arcs);
       this.arcs = arcs;
     },
   }
