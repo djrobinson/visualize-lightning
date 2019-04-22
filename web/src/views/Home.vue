@@ -6,13 +6,8 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import LightningNetwork from '@/components/LightningNetwork.vue'; // @ is an alias to /src
 
-@Component({
-  components: {
-    LightningNetwork,
-  },
-})
+
 export default class Home extends Vue {}
 </script>
 <style lang="scss">
@@ -21,6 +16,5 @@ export default class Home extends Vue {}
     height: 100%;
     margin: 0;
     padding: 0;
-
   }
 </style>
