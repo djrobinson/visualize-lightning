@@ -25,6 +25,12 @@ class IpGeoLookup {
     }
   }
 
+  public static async selectByIp(ip: string) {
+    const data = new IpGeoLookupData();
+    const result = await data.selectById(ip);
+    return result;
+  }
+
   upsertRecord() {
     const data = new IpGeoLookupData();
     data.upsert(this);
