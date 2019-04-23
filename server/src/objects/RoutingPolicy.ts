@@ -10,11 +10,11 @@ export default class RoutingPolicy {
   disabled: boolean;
   maxHtlcMsat: string;
 
-  constructor(channelId: string = null) {
-    this.policyId = channelId;
-    if (channelId) {
+  constructor(policyId: string = null) {
+    this.policyId = policyId;
+    if (policyId) {
       const data = new RoutingPolicyData();
-      const result = data.selectById(channelId);
+      const result = data.selectById(policyId);
       console.log('What is result', result);
     }
   }

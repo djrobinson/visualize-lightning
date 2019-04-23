@@ -1,9 +1,9 @@
 import BaseDataAccess from './baseDataAccess';
 
-export default class ChannelEdgeData extends BaseDataAccess {
+export default class RoutingPolicyData extends BaseDataAccess {
   connection: any;
   constructor() {
-    const name = 'channel_edges';
+    const name = 'routing_policies';
     const columns = [
       'policy_id',
       'policy_owner_public_key',
@@ -14,7 +14,7 @@ export default class ChannelEdgeData extends BaseDataAccess {
       'disabled',
       'max_htlc_msat',
     ];
-    const uniqueIdentifier = 'id';
+    const uniqueIdentifier = 'policy_id';
     super(name, columns, columns, uniqueIdentifier);
   }
 }

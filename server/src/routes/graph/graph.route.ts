@@ -84,9 +84,9 @@ export class GraphRoute extends BaseRoute {
       nodes.forEach(node => {
         const nodeInstance = new LightningNode();
         nodeInstance.publicKey = node.pubKey;
-        nodeInstance.ipAddress = node.addresses
-          ? this.ipAddressHelper(node)
-          : null;
+        // nodeInstance.ipAddress = node.addresses
+        //   ? this.ipAddressHelper(node)
+        //   : null;
         nodeInstance.alias = node.alias;
         nodeInstance.color = node.color;
         nodeInstance.upsertRecord();
@@ -104,7 +104,8 @@ export class GraphRoute extends BaseRoute {
         const node1Policy = new RoutingPolicy();
         node1Policy.policyOwnerPublicKey = edge.node1Pub;
         if (edge.node1Policy) {
-          node1Policy.timeLockDelta = edge.node1Policy.timeLockDelta;
+          node1Policy.policyId = `${edge.channelId}-${edge.node1Pub}`;
+          node1Policy.timeLockDelta = edge.node1Policy.timeLockDelta || 0;
           node1Policy.minHtlc = edge.node1Policy.minHtlc;
           node1Policy.feeBaseMsat = edge.node1Policy.feeBaseMsat;
           node1Policy.feeRateMilliMsat = edge.node1Policy.feeRateMilliMsat;
@@ -112,8 +113,10 @@ export class GraphRoute extends BaseRoute {
           node1Policy.upsertRecord();
         }
         const node2Policy = new RoutingPolicy();
+        node2Policy.policyOwnerPublicKey = edge.node2Pub;
         if (edge.node2Policy) {
-          node2Policy.timeLockDelta = edge.node2Policy.timeLockDelta;
+          node2Policy.policyId = `${edge.channelId}-${edge.node2Pub}`;
+          node2Policy.timeLockDelta = edge.node2Policy.timeLockDelta || 0;
           node2Policy.minHtlc = edge.node2Policy.minHtlc;
           node2Policy.feeBaseMsat = edge.node2Policy.feeBaseMsat;
           node2Policy.feeRateMilliMsat = edge.node2Policy.feeRateMilliMsat;

@@ -12,8 +12,8 @@ exports.up = function(knex, Promise) {
 exports.down = function(knex, Promise) {
     return knex.schema.table('lightning_nodes', function(t) {
         t.dropForeign('ip_address');
-        t.number('latitude');
-        t.number('longitude');
+        t.float('latitude');
+        t.float('longitude');
         t.string('network');
         t.dropColumn('color');
     });
