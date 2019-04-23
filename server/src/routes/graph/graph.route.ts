@@ -19,7 +19,10 @@ import { BaseRoute } from '../route';
 export class GraphRoute extends BaseRoute {
   public static path: string = '/graph';
   private static instance: GraphRoute;
-  private ipRegex: RegExp = /((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
+  private ipv6Regex: RegExp = /(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))/g;
+  private ipv4Regex: RegExp = /((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
+
+  private ignoredIps = ['0.0.0.0', '127.0.0.1', 'X.X.X.X'];
 
   /**
    * @class GraphRoute
@@ -84,9 +87,9 @@ export class GraphRoute extends BaseRoute {
       nodes.forEach(node => {
         const nodeInstance = new LightningNode();
         nodeInstance.publicKey = node.pubKey;
-        // nodeInstance.ipAddress = node.addresses
-        //   ? this.ipAddressHelper(node)
-        //   : null;
+        nodeInstance.ipAddress = node.addresses
+          ? this.ipAddressHelper(node)
+          : null;
         nodeInstance.alias = node.alias;
         nodeInstance.color = node.color;
         nodeInstance.upsertRecord();
@@ -143,16 +146,26 @@ export class GraphRoute extends BaseRoute {
       return acc;
     }, []);
     const cleanedIpForTesting = cleanIps.slice(0, 2);
-    const ipRes = await IpStack.gatherIpAddresses(cleanedIpForTesting);
+    const ipRes = await IpStack.gatherIpAddresses(cleanIps);
     return ipRes;
   }
 
   public ipAddressHelper(nodes: LightningNodeType) {
     const ips = nodes.addresses;
     const cleanIps = ips.reduce((acc, ip) => {
-      const cleanedIp = ip.addr.match(this.ipRegex);
-      if (cleanedIp && cleanedIp.length) {
-        acc.push(cleanedIp[0]);
+      const cleanedIpv6 = ip.addr.match(this.ipv6Regex);
+      if (cleanedIpv6 && cleanedIpv6.length) {
+        const cleanIp = cleanedIpv6[0];
+        if (this.ignoredIps.indexOf(cleanIp) === -1) {
+          acc.push(cleanIp);
+        }
+      }
+      const cleanedIpv4 = ip.addr.match(this.ipv4Regex);
+      if (cleanedIpv4 && cleanedIpv4.length) {
+        const cleanIp = cleanedIpv4[0];
+        if (this.ignoredIps.indexOf(cleanIp) === -1) {
+          acc.push(cleanIp);
+        }
       }
       return acc;
     }, []);
