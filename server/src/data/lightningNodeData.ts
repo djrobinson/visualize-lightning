@@ -65,4 +65,39 @@ export default class LightningNodeData extends BaseDataAccess {
 
     return res;
   }
+
+  public async selectNodesIpOnly() {
+    const res = await knex
+      .select(
+        'l.public_key',
+        'l.ip_address',
+        'l.alias',
+        'l.color',
+        'i.ip',
+        'i.type',
+        'i.continent_code',
+        'i.continent_name',
+        'i.country_code',
+        'i.country_name',
+        'i.region_code',
+        'i.region_name',
+        'i.city',
+        'i.zip',
+        'i.latitude',
+        'i.longitude',
+        'i.country_flag',
+        'i.country_flag_emoji',
+      )
+      .from('lightning_nodes as l')
+      .leftJoin('ip_geo_lookup as i', 'i.ip', 'l.ip_address')
+      .whereNotNull('l.ip_address');
+    return res;
+  }
+  public async selectNorthPoleNodes() {
+    const res = await knex
+      .select('public_key', 'ip_address', 'alias', 'color')
+      .from('lightning_nodes')
+      .where('ip_address', null);
+    return res;
+  }
 }

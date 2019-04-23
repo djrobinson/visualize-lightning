@@ -11,7 +11,6 @@
                 <li>{{nodes[node].alias}}</li>
                 <li>Public Key: {{node.slice(0,5)}}...{{node.slice(-5)}}</li>
                 <li>{{nodes[node].region}}</li>
-                <li>Channels Open: {{nodes[node].edgeCount}}</li>
             </ul>
         </div>
 
@@ -31,7 +30,7 @@ export default Vue.extend({
         }
     },
     mounted() {
-        console.log("why does this need to change to change props")
+        console.log("why does this need to cshange to change propss")
         if (this.nodes) {
             this.keyList = Object.keys(this.nodes);
             this.first100 = this.keyList.slice(0, 99);

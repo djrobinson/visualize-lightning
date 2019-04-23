@@ -30,6 +30,18 @@ class LightningNode {
     const res = await data.selectNodesAndEdgesIpOnly();
     return res;
   }
+
+  public static async getNodesIpOnly() {
+    const data = new LightningNodeData();
+    const res = await data.selectNodesIpOnly();
+    return res;
+  }
+
+  public static async getNorthPoleNodes() {
+    const data = new LightningNodeData();
+    const res = await data.selectNorthPoleNodes();
+    return res;
+  }
 }
 
 export default LightningNode;

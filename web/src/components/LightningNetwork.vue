@@ -60,47 +60,45 @@ export default Vue.extend({
       mapboxgl.accessToken = 'pk.eyJ1IjoiZGFubnkxcm9iaW5zb24iLCJhIjoiY2p1bTExc21tMHliNzN5bXFoNGZua3MzZyJ9.4RybkDpAAixpKuuCmTeEyA'
       const response = await axios.get('http://localhost:3000/api/networkmap/ips')
       this.selectedNode = '038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9';
-      this.edges = response.data.edges;
       this.popups = [];
-      this.recalculateArcs();
-      this.nodes = response.data.edges.reduce((acc, edge) => {
-        if (!acc[edge.node1_pub] && parseFloat(edge.node1_longitude) && parseFloat(edge.node1_latitude)) {
-          acc[edge.node1_pub] = {
-            public_key: edge.node1_pub,
-            position: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
-            color: [0, 0, 0],
+      console.log("Working with new response: ", response);
+      const northpole_res = await axios.get('http://localhost:3000/api/networkmap/northpole')
+      console.log("What is north pole", northpole_res);
+      const ipNodes = response.data.nodes.reduce((acc, node) => {
+        if (!acc[node.public_key] && parseFloat(node.longitude) && parseFloat(node.latitude)) {
+          acc[node.public_key] = {
+            public_key: node.public_key,
+            position: [parseFloat(node.longitude), parseFloat(node.latitude)],
+            color: [0,0,0],
             radius: 1000,
-            edgeCount: 1,
-            alias: edge.node1_alias,
-            ip: edge.node1_ip_address,
-            city: edge.node1_city,
-            country: edge.node1_country_name,
-            region: edge.node1_region_name
+            alias: node.alias,
+            ip: node.ip_address,
+            city: node.city,
+            country: node.country_name,
+            region: node.region_name
           }
-        }
-        if (!acc[edge.node2_pub] && parseFloat(edge.node2_longitude) && parseFloat(edge.node2_latitude)) {
-          acc[edge.node2_pub] = {
-            public_key: edge.node2_pub,
-            position: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
-            color: [0, 0, 0],
-            radius: 1000,
-            edgeCount: 1,
-            alias: edge.node2_alias,
-            ip: edge.node2_ip_address,
-            city: edge.node2_city,
-            country: edge.node2_country_name,
-            region: edge.node2_region_name
-          }
-        }
-        if (acc[edge.node2_pub]) {
-          acc[edge.node2_pub].edgeCount++;
-        }
-        if (acc[edge.node2_pub]) {
-          acc[edge.node2_pub].edgeCount++;
-        }
+        };
         return acc;
-      }, {})
-      this.scatterData = Object.values(this.nodes).sort((a, b) => (a.edgeCount < b.edgeCount) ? 1 : -1);
+      }, {});
+      const northpoleNodes = northpole_res.data.nodes.reduce((acc, node, i) => {
+        if (!acc[node.public_key]) {
+          acc[node.public_key] = {
+            public_key: node.public_key,
+            position: [-170 + (i * 0.5), 70 + (1 * (i % 5))],
+            color: [0,0,0],
+            radius: 1000,
+            alias: node.alias,
+          }
+        };
+        return acc;
+      }, {});
+
+      const ipVals = Object.values(ipNodes);
+      const npVals = Object.values(northpoleNodes);
+      const allNodes = ipVals.concat(npVals);
+      this.nodes = {...ipNodes, ...northpoleNodes};
+      this.scatterData = allNodes;
+      console.log("What all nodes is: ", allNodes);
 
       const map = new mapboxgl.Map({
         container: 'map',
@@ -112,35 +110,23 @@ export default Vue.extend({
       });
       this.map = map;
       map.on('load', () => {
-        this._mapLoaded(map)
-      });
-  },
-  methods: {
-    _mapLoaded(map) {
-  
-      const arclayer = new MapboxLayer({
-        id: 'arc',
-        type: ArcLayer,
-        data: this.arcs,
-        getSourcePosition: d => d.source,
-        getTargetPosition: d => d.target,
-        getWidth: 5
-      })
-
-      map.addLayer(arclayer)
-
-      const scatterplotlayer = new MapboxLayer({
+        const scatterplotlayer = new MapboxLayer({
           id: 'scatter',
           type: ScatterplotLayer,
           getRadius: d => d.radius,
           getColor: d => d.color,
           radiusMinPixels: 3,
           data: this.scatterData,
-      })
+        })
 
       
-      map.addLayer(scatterplotlayer)
-
+        map.addLayer(scatterplotlayer)
+        this.recalculateArcs()
+        this._mapLoaded(map)
+      });
+  },
+  methods: {
+    _mapLoaded(map) {
       const popups = this.popups;
       const scatterData = this.scatterData;
       const boundSetNodes = this.setNodesInView.bind(this);
@@ -177,18 +163,6 @@ export default Vue.extend({
             .addTo(map);
       });
     },
-    drawArcs() {
-      const arclayer = new MapboxLayer({
-        id: 'arc',
-        type: ArcLayer,
-        data: this.arcs,
-        getSourcePosition: d => d.source,
-        getTargetPosition: d => d.target,
-        getWidth: 5
-      })
-
-      this.map.addLayer(arclayer)
-    },
     setNodesInView(bounds) {
       this.nodesInView = this.scatterData.filter(node => {
         if (bounds._sw.lng < node.position[0] && node.position[0] < bounds._ne.lng && bounds._sw.lat < node.position[1] && node.position[1] < bounds._ne.lat) {
@@ -197,14 +171,8 @@ export default Vue.extend({
               var popup = new mapboxgl.Popup({closeOnClick: false})
               .setLngLat(currentNode.position)
               .setHTML(`
-                <p>Public Key: ${currentNode.public_key}</p>
-                <p>Alias: ${currentNode.alias || ''}</p>
-                <p>Color: ${currentNode.color}</p>
-                <p>Channel Count: ${currentNode.edgeCount}</p>
                 <p>IP: ${currentNode.ip || ''}</p>
                 <p>City: ${currentNode.city}</p>
-                <p>Region: ${currentNode.region}</p>
-                <p>IP: ${currentNode.country}</p>
               `)
               .addTo(this.map);
               this.popups.push(popup);
@@ -222,24 +190,32 @@ export default Vue.extend({
       }
       console.log("New selected Channel", this.selectedChannel, channel_id);
     },
-    selectNode(pub_key) {
+    async selectNode(pub_key) {
       this.map.removeLayer('arc')
       console.log("Pusgb: ", pub_key)
       const selNode = this.nodes[pub_key]
       this.selectedNode = pub_key;
-      this.recalculateArcs()
-      this.drawArcs()
       this.map.setZoom(1);
       this.map.setCenter([0,0]);
+      await this.recalculateArcs();
     },
-    recalculateArcs() {
-      const edges = this.edges
+    async recalculateArcs() {
+      const arcRes = await axios.post('http://localhost:3000/api/networkmap/arcs', { publicKey: this.selectedNode })
       this.activeChannels = [];
-      const arcs = edges.reduce((acc, edge) => {
-        if (this.selectedNode === edge.node1_pub || this.selectedNode === edge.node2_pub) {
 
+      const theseNodes = this.nodes;
+      this.edges = arcRes.data.mapChannels;
+      
+      const arcs = this.edges.reduce((acc, edge) => {
+
+        if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
+          acc.push({
+            source: theseNodes[edge.node1_pub].position,
+            target: theseNodes[edge.node2_pub].position,
+            value: parseInt(edge.capacity)
+          });
+        } else if (this.selectedNode === edge.node1_pub || this.selectedNode === edge.node2_pub) {
           this.activeChannels.push(edge)
-
           acc.push({
             source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
             target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
@@ -258,6 +234,16 @@ export default Vue.extend({
         a.quantile = scale(Math.abs(a.value));
       });
       this.arcs = arcs;
+      const arclayer = new MapboxLayer({
+        id: 'arc',
+        type: ArcLayer,
+        data: this.arcs,
+        getSourcePosition: d => d.source,
+        getTargetPosition: d => d.target,
+        getWidth: 5
+      })
+
+      this.map.addLayer(arclayer)
     },
   }
 })

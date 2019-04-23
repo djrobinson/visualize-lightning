@@ -26,4 +26,10 @@ export default class ChannelEdge {
     const data = new ChannelEdgeData();
     data.upsert(this);
   }
+
+  public static async getActiveArcs(publicKey: string) {
+    const data = new ChannelEdgeData();
+    const res = await data.selectArcs(publicKey);
+    return res;
+  }
 }

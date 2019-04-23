@@ -15,7 +15,6 @@ import { BaseRoute } from '../route';
 export class NetworkMapRoute extends BaseRoute {
   public static path: string = '/networkmap';
   private static instance: NetworkMapRoute;
-  private ipRegex: RegExp = /((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/g;
 
   /**
    * @class GraphRoute
@@ -24,12 +23,15 @@ export class NetworkMapRoute extends BaseRoute {
   private constructor() {
     super();
     this.ips = this.ips.bind(this);
+    this.activeChannels = this.activeChannels.bind(this);
     this.init();
   }
 
   private init() {
     logger.info('[NetworkRoute] Creating network route.');
     this.router.get('/ips', this.ips);
+    this.router.get('/northpole', this.northPole);
+    this.router.post('/arcs', this.activeChannels);
   }
 
   static get router() {
@@ -48,8 +50,29 @@ export class NetworkMapRoute extends BaseRoute {
    */
   public async ips(req: Request, res: Response, next: NextFunction) {
     try {
-      const edges = await LightningNode.getNodesAndEdgesIpsIpOnly();
-      res.json({ edges });
+      const nodes = await LightningNode.getNodesIpOnly();
+      res.json({ nodes });
+    } catch (err) {
+      res.status(400).json({ error: err });
+    }
+    next();
+  }
+
+  public async northPole(req: Request, res: Response, next: NextFunction) {
+    try {
+      const nodes = await LightningNode.getNorthPoleNodes();
+      res.json({ nodes });
+    } catch (err) {
+      res.status(400).json({ error: err });
+    }
+    next();
+  }
+
+  public async activeChannels(req: Request, res: Response, next: NextFunction) {
+    try {
+      const publicKey = req.body.publicKey;
+      const mapChannels = await ChannelEdge.getActiveArcs(publicKey);
+      res.json({ mapChannels });
     } catch (err) {
       res.status(400).json({ error: err });
     }
