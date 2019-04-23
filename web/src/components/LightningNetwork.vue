@@ -2,11 +2,12 @@
 
     <div class="canvas-container">
       <div id="map"></div>
-      <ChannelList
+      <!-- <ChannelList
         v-bind:channels="activeChannels"
         v-on:select-channelid="selectChannel($event)"
-      />
+      /> -->
       <NodeList 
+        v-if="nodes"
         v-on:select-pubkey="selectNode($event)"
         v-bind:nodes="nodes"
       />
@@ -46,6 +47,8 @@ export default Vue.extend({
           popups: [],
           selectedNode: null,
           selectedChannel: null,
+          mapCenter: [55,40],
+          standardZoom: 1.1,
           INITIAL_VIEW_STATE: {
             longitude: -100,
             latitude: 40.7,
@@ -69,7 +72,7 @@ export default Vue.extend({
           acc[node.public_key] = {
             public_key: node.public_key,
             position: [parseFloat(node.longitude), parseFloat(node.latitude)],
-            color: [0,0,0],
+            color:  this._hexToRgbNew(node.color),
             radius: 1000,
             alias: node.alias,
             ip: node.ip_address,
@@ -84,8 +87,8 @@ export default Vue.extend({
         if (!acc[node.public_key]) {
           acc[node.public_key] = {
             public_key: node.public_key,
-            position: [-170 + (i * 0.5), 70 + (1 * (i % 5))],
-            color: [0,0,0],
+            position: [-165 + (i * 0.5), 70 + (1 * (i % 7))],
+            color:  this._hexToRgbNew(node.color),
             radius: 1000,
             alias: node.alias,
           }
@@ -103,10 +106,10 @@ export default Vue.extend({
       const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v10',
-        center: [5,0],
+        center: this.mapCenter,
         pitch: 22 ,
         bearing: 0,
-        zoom: 1
+        zoom: this.standardZoom,
       });
       this.map = map;
       map.on('load', () => {
@@ -114,18 +117,28 @@ export default Vue.extend({
           id: 'scatter',
           type: ScatterplotLayer,
           getRadius: d => d.radius,
-          getColor: d => d.color,
+          getColor: d =>d.color,
           radiusMinPixels: 3,
           data: this.scatterData,
         })
-
-      
         map.addLayer(scatterplotlayer)
         this.recalculateArcs()
         this._mapLoaded(map)
       });
   },
   methods: {
+    _hexToRgbNew(hex) {
+      if(hex.substring(0,1) == '#') {
+        hex = hex.substring(1);
+      }
+      var arrBuff = new ArrayBuffer(4);
+      var vw = new DataView(arrBuff);
+
+      vw.setUint32(0,parseInt(hex, 16),false);
+      var arrByte = new Uint8Array(arrBuff);
+      const color = [arrByte[1], arrByte[2], arrByte[3]];
+      return color;
+    },
     _mapLoaded(map) {
       const popups = this.popups;
       const scatterData = this.scatterData;
@@ -133,34 +146,20 @@ export default Vue.extend({
        map.on('click', function (e) {
         console.log('reg click')
         const currZoom = map.getZoom();
-        if (currZoom === 8) {
+        if (currZoom === 7) {
           this.nodesInView = []
-          map.setZoom(1);
-          map.setCenter([10,0]);
+          map.setZoom(this.standardZoom);
+          map.setCenter(this.mapCenter);
           if (this.popups) {
             this.popups.forEach(popup => popup.remove());
           }
         } else {
-          map.setZoom(8);
+          map.setZoom(7);
           map.setCenter(e.lngLat);
           const bounds = map.getBounds();
           boundSetNodes(bounds);
           this.popups = popups;
         }
-        var features = map.queryRenderedFeatures(e.point, { layers: ['scatter', 'arc'] });
-
-        if (!features.length) {
-            return;
-        }
-
-        var feature = features[0];
-        //Use Feature and put your code
-        // Populate the popup and set its coordinates
-        // based on the feature found.
-        var popup = new mapboxgl.Popup()
-            .setLngLat(feature.geometry.coordinates)
-            .setHTML(feature.properties.description)
-            .addTo(map);
       });
     },
     setNodesInView(bounds) {
@@ -191,12 +190,8 @@ export default Vue.extend({
       console.log("New selected Channel", this.selectedChannel, channel_id);
     },
     async selectNode(pub_key) {
-      this.map.removeLayer('arc')
       console.log("Pusgb: ", pub_key)
-      const selNode = this.nodes[pub_key]
       this.selectedNode = pub_key;
-      this.map.setZoom(1);
-      this.map.setCenter([0,0]);
       await this.recalculateArcs();
     },
     async recalculateArcs() {
@@ -206,7 +201,7 @@ export default Vue.extend({
       const theseNodes = this.nodes;
       this.edges = arcRes.data.mapChannels;
       
-      const arcs = this.edges.reduce((acc, edge) => {
+      const arcs = arcRes.data.mapChannels.reduce((acc, edge) => {
 
         if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
           acc.push({
@@ -234,13 +229,20 @@ export default Vue.extend({
         a.quantile = scale(Math.abs(a.value));
       });
       this.arcs = arcs;
+      if (this.map.getLayer('arc')) {
+        this.map.removeLayer('arc')
+      }
+      this.map.setZoom(this.standardZoom);
+      this.map.setCenter(this.mapCenter);
       const arclayer = new MapboxLayer({
         id: 'arc',
         type: ArcLayer,
         data: this.arcs,
+        opacity: 0.1,
+        getColor: [0,0,0],
         getSourcePosition: d => d.source,
         getTargetPosition: d => d.target,
-        getWidth: 5
+        getWidth: 3
       })
 
       this.map.addLayer(arclayer)

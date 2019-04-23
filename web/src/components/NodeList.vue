@@ -1,19 +1,16 @@
 <template>
   <div class="node-list-container">
-      <h1>Node List</h1>
-
-        <div 
-            v-for="node in first100" :key="node"
-            v-on:click="$emit('select-pubkey', node)"
-            class="node-tile"
-        >
-            <ul>
-                <li>{{nodes[node].alias}}</li>
-                <li>Public Key: {{node.slice(0,5)}}...{{node.slice(-5)}}</li>
-                <li>{{nodes[node].region}}</li>
-            </ul>
-        </div>
-
+    <div 
+        v-for="node in first100" :key="node"
+        @mouseover="$emit('select-pubkey', node)"
+        class="node-tile"
+    >
+        <ul>
+            <li>{{nodes[node].alias}}</li>
+            <li>Public Key: {{node.slice(0,5)}}...{{node.slice(-5)}}</li>
+            <li>{{nodes[node].region}}</li>
+        </ul>
+    </div>
   </div>
 </template>
 <script>
