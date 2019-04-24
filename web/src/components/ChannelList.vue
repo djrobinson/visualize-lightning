@@ -1,15 +1,15 @@
 <template>
   <div class="channel-list-container">
     <h5>Channel List</h5>
-    <div 
-        v-for="channel in channels" :key="channel.channel_id" 
-        v-on:click="$emit('select-channelid', channel.channel_id)"
-        class="channel-tile"
-    >
-        <ul>
-            <li>{{channel.channel_id}}</li>
-            <li>Capacity: {{channel.capacity}}</li>
-        </ul>
+    <div class="scroller">
+        <div 
+            v-for="channel in channels" :key="channel.channel_id" 
+            v-on:click="$emit('select-channelid', channel.channel_id)"
+            class="channel-tile"
+        >
+            <p><b>ID:</b> <span>{{channel.channel_id}}</span></p>
+            <p><b>Capacity:</b> <span>{{channel.capacity}}</span></p>
+        </div>
     </div>
   </div>
 </template>
@@ -37,13 +37,32 @@ export default Vue.extend({
 <style lang="scss">
 .channel-list-container {
     background: rgba(255, 255, 255);
-    overflow: scroll;
-    .channel-tile {
-        ul {
+
+    .scroller {
+        overflow: scroll;
+        height: 400px;
+        width: 100%;
+        .channel-tile {
+            border-top: solid 1px black;
             padding-left: 10px;
+            padding-right: 10px;
             text-align: left;
-            list-style: none;
+            p {
+                b {
+                    text-align: left;
+                }
+                span {
+                    float: right;
+                }
+            }
+
         }
+    }
+    
+    .channel-tile:hover {
+        border-top: solid 4px black;
+        border-bottom: solid 3px black;
+
     }
 }
 </style>

@@ -4,7 +4,7 @@
     <div 
         v-for="node in keyList" :key="node"
         v-on:click="$emit('select-pubkey', node)"
-        @mouseover="$emit('preview-node', node)""
+        @mouseover="$emit('preview-node', node)"
         class="node-tile"
         v-bind:style="{ 'border-left': `solid 6px rgb(${nodes[node].color})`, 'border-right': `solid 6px rgb(${nodes[node].color})` }">
         <div class="node-container">

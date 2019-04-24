@@ -13,7 +13,7 @@
           v-if="selectedNode && !selectedChannel"
           class="tab">
           <span><p><a v-on:click="clearSelected"><i class="fa fa-arrow-left"></i> Choose A Different Node</a></p></span>
-          <h5>Node Channel Explorer</h5>
+          <h5>Node Detail</h5>
         </div>
         <div 
           v-if="selectedChannel"
@@ -111,10 +111,9 @@ export default Vue.extend({
         if (!acc[node.public_key]) {
           acc[node.public_key] = {
             publicKey: node.public_key,
-            position: [-165 + (i * 0.5), 70 + (1 * (i % 7))],
+            position: [-165 + (i * 0.4), 75 + (1 * (i % 8))],
             color:  this._hexToRgbNew(node.color),
             radius: 1000,
-            radiusScale: 3,
             alias: node.alias,
           }
         };

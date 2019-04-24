@@ -2,10 +2,12 @@
   <div class="channel-explorer-container">
         <LightningNode v-bind:node="node">
         </LightningNode>
-        <ChannelList 
-            v-bind:channels="channels"
-            v-on:select-channelid="$emit('select-channelid', $event)">
-        </ChannelList>
+        <div class="row">
+            <ChannelList 
+                v-bind:channels="channels"
+                v-on:select-channelid="$emit('select-channelid', $event)">
+            </ChannelList>
+        </div>
   </div>
 </template>
 <script>
