@@ -36,11 +36,8 @@ export default Vue.extend({
 
 <style lang="scss">
 .channel-list-container {
-    position: absolute;
-    top: 49px;
-    width: 200px;
-    height: calc(100vh - 50px);
-    background: rgba(255, 255, 255, 0.8);
+    height: calc(100vh - 150px);
+    background: rgba(255, 255, 255);
     overflow: scroll;
     .channel-tile {
         ul {
@@ -49,6 +46,5 @@ export default Vue.extend({
             list-style: none;
         }
     }
-    
-  }
+}
 </style>

@@ -4,41 +4,46 @@
     <div id="map"></div>
     <div class="sidebar-pane">
       <div class="tab-row">
-        <div 
-          v-on:click="changeTabs()"
-          v-bind:class="{ active: !activeMapSearch }"
+        <div
+          v-if="!selectedNode"
           class="tab">
-          <p>All Nodes</p>
+          <h5>Map Search</h5>
         </div>
         <div 
-          v-bind:class="{ active: activeMapSearch }"
-          v-on:click="changeTabs()"
+          v-if="selectedNode && !selectedChannel"
           class="tab">
-          <p>Map Search</p>
+          <span><p><a v-on:click="clearSelected"><i class="fa fa-arrow-left"></i> Choose A Different Node</a></p></span>
+          <h5>Node Channel Explorer</h5>
+        </div>
+        <div 
+          v-if="selectedChannel"
+          class="tab">
+          <span><p><a v-on:click="clearChannel"><i class="fa fa-arrow-left"></i> Choose A Different Channel</a></p></span>
+          <h5>Channel Detail</h5>
         </div>
       </div>
-      <ChannelList
-        v-bind:channels="activeChannels"
-        v-on:select-channelid="selectChannel($event)"
-      />
+
       <NodeList 
-        v-if="nodes && !activeMapSearch"
-        v-on:select-pubkey="selectNode($event)"
-        v-bind:nodes="nodes"
-        title="hotdog"
-      />
-      <NodeList 
-        v-if="nodesInView && activeMapSearch"
+        v-if="!selectedNode"
         v-on:select-pubkey="selectNode($event)"
         v-bind:nodes="nodesInView"
-        title="not hotdog"
       />
+      <ChannelExplorer
+        v-if="selectedNode && !selectedChannel"
+        v-on:select-channelid="selectChannel($event)"
+        v-bind:channels="activeChannels"
+        v-bind:node="nodes[selectedNode]"
+      >
+      </ChannelExplorer>
+      <ChannelPolicy 
+          v-if="selectedChannel"
+          v-bind:channel="selectedChannel"
+      >
+      </ChannelPolicy>
+
     </div>
-    <button v-on:click="setNodesInView" class="map-search-button buttom">Search Here</button>
-    <ChannelExplorer
-      v-if="selectedChannel"
-      v-bind:channel="selectedChannel"
-    />
+    <button v-on:click="searchMap" class="map-search-button button">Redo Search in Area</button>
+    
   </div>
 
 </template>
@@ -49,6 +54,7 @@ import {MapboxLayer} from '@deck.gl/mapbox';
 import {GeoJsonLayer, ArcLayer, ScatterplotLayer} from '@deck.gl/layers';
 import {scaleQuantile} from 'd3-scale';
 import {NodeList} from '@/components/NodeList';
+import {ChannelExplorer} from '@/components/ChannelExplorer';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 
@@ -80,7 +86,6 @@ export default Vue.extend({
   async mounted(){
       mapboxgl.accessToken = 'pk.eyJ1IjoiZGFubnkxcm9iaW5zb24iLCJhIjoiY2p1bTExc21tMHliNzN5bXFoNGZua3MzZyJ9.4RybkDpAAixpKuuCmTeEyA'
       const response = await axios.get('http://localhost:3000/api/networkmap/ips')
-      this.selectedNode = '038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9';
       this.popups = [];
       const northpole_res = await axios.get('http://localhost:3000/api/networkmap/northpole')
       const ipNodes = response.data.nodes.reduce((acc, node) => {
@@ -117,6 +122,7 @@ export default Vue.extend({
       const npVals = Object.values(northpoleNodes);
       const allNodes = ipVals.concat(npVals);
       this.nodes = {...ipNodes, ...northpoleNodes};
+      this.nodesInView = this.nodes;
       this.scatterData = allNodes;
       console.log("What all nodes is: ", allNodes);
 
@@ -160,8 +166,21 @@ export default Vue.extend({
       const mapCenter = this.mapCenter;
       this.setNodesInView();
     },
+    clearSelected() {
+      this.selectedNode = null;
+      this.activeNodes = [];
+      this.activeChannels = [];
+    },
+    clearChannel() {
+      this.selectedChannel = null;
+    },
     changeTabs() {
       this.activeMapSearch = !this.activeMapSearch;
+    },
+    searchMap() {
+      this.activeMapSearch = true;
+      this.setNodesInView()
+      
     },
     setNodesInView() {
       const bounds = this.map.getBounds() 
@@ -280,7 +299,7 @@ export default Vue.extend({
     .map-search-button {
       position: absolute;
       bottom: 50px;
-      left: 45%;
+      left: 35%;
     }
   }
   #map {
@@ -301,27 +320,29 @@ export default Vue.extend({
     .tab-row {
       width: 100%;
       display: flex;
-      flex-direction: row;
+
       .tab {
+        color: black;
+        font-weight: 900;
         flex-grow: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: lightgray;
+        flex-direction: column;
+        padding: 0;
+        h5 {
+          margin: 10px 0 5px 0;
+          padding: 0;
+        }
+        a {
+          color: gray;
+          font-weight: 500;
+        }
+        a:hover {
+          font-weight: 900;
+          color: black;
+        }
       }
-      .tab:hover {
-        font-weight: 700;
-        color: gray;
-      }
-      .tab.active{
-        color: black;
-        font-weight: 900;
-      }
-      .tab.active:hover {
-        font-weight: 700;
-      }
-
-
     }
   }
   #marker {
