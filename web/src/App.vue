@@ -1,7 +1,8 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
+      <h3>Visualize Lightning</h3> |
+      <router-link to="/">Map</router-link> |
       <router-link to="/about">Data</router-link>
     </div>
     <router-view/>
@@ -24,7 +25,7 @@ body {
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 16px;
+  font-size: 12px;
   margin: 4px 2px;
   -webkit-transition-duration: 0.4s; /* Safari */
   transition-duration: 0.4s;
@@ -54,17 +55,20 @@ body {
   height: 50px;
   display: flex;
   align-items: center;
-  justify-content: left;
+  justify-content: right;
   padding-left: 50px;
   z-index: 5;
   background: rgba(255, 255, 255);
   width: 100%;
+  h3 {
+    padding-right: 10px;
+  }
   a {
     padding: 10px;
     font-weight: bold;
     color: #2c3e50;
     &.router-link-exact-active {
-      color: #42b983;
+      color: #0de785;
     }
   }
 }

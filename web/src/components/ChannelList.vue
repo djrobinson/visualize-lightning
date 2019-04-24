@@ -5,6 +5,7 @@
         <div 
             v-for="channel in channels" :key="channel.channel_id" 
             v-on:click="$emit('select-channelid', channel.channel_id)"
+            @mouseover="$emit('highlight-channelid', channel.channel_id)"
             class="channel-tile"
         >
             <p><b>ID:</b> <span>{{channel.channel_id}}</span></p>
@@ -26,7 +27,7 @@ export default Vue.extend({
         }
     },
     mounted() {
-        console.log("What it is: ", this.channels)
+
     },
     methods: {
 
@@ -47,7 +48,11 @@ export default Vue.extend({
             padding-left: 10px;
             padding-right: 10px;
             text-align: left;
+            margin: 0;
+            cursor: pointer;
             p {
+                margin:0;
+                padding: 5px;
                 b {
                     text-align: left;
                 }
@@ -60,8 +65,7 @@ export default Vue.extend({
     }
     
     .channel-tile:hover {
-        border-top: solid 4px black;
-        border-bottom: solid 3px black;
+        background-color: lightgray;
 
     }
 }

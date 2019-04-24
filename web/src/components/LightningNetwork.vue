@@ -26,12 +26,14 @@
       <NodeList 
         v-if="!selectedNode"
         v-on:select-pubkey="selectNode($event)"
-        v-on:preview-node="previewNode($event)"
+        v-on:preview-node="showPreview($event)"
         v-bind:nodes="nodesInView"
       />
       <ChannelExplorer
         v-if="selectedNode && !selectedChannel"
+        v-on:highlight-channelid="hightlightChannel($event)"
         v-on:select-channelid="selectChannel($event)"
+        
         v-bind:channels="activeChannels"
         v-bind:node="nodes[selectedNode]"
       >
@@ -43,7 +45,8 @@
       </ChannelPolicy>
 
     </div>
-    <button v-on:click="searchMap" class="map-search-button button">Redo Search in Area</button>
+    <button v-on:click="searchMap" class="map-search-button button">Redo Search in This Area</button>
+    <button v-on:click="backToCenter" class="map-zoom-button button">Zoom Out and Center</button>
     
   </div>
 
@@ -78,10 +81,11 @@ export default Vue.extend({
           nodesInView: [],
           popups: [],
           selectedNode: null,
+          previewNode: null,
           selectedChannel: null,
           activeMapSearch: false,
-          mapCenter: [55,40],
-          standardZoom: 1,
+          mapCenter: [40,40],
+          standardZoom: 1.5,
       }
   },
   async mounted(){
@@ -126,7 +130,6 @@ export default Vue.extend({
       this.nodes = {...ipNodes, ...northpoleNodes};
       this.nodesInView = this.nodes;
       this.scatterData = allNodes;
-      console.log("What all nodes is: ", allNodes);
 
       const map = new mapboxgl.Map({
         container: 'map',
@@ -180,10 +183,15 @@ export default Vue.extend({
       this.activeMapSearch = !this.activeMapSearch;
     },
     searchMap() {
+      this.clearSelected();
       this.activeMapSearch = true;
       this.setNodesInView()
-      
     },
+    backToCenter() {
+      this.map.setZoom(this.standardZoom)
+      this.map.setCenter(this.mapCenter)
+    },
+    
     setNodesInView() {
       const bounds = this.map.getBounds() 
       this.nodesInView = this.scatterData.reduce((acc, node) => {
@@ -193,22 +201,23 @@ export default Vue.extend({
         }
         return acc;
       }, {});
-      console.log("What is nodesInView", this.nodesInView);
     },
     selectChannel(channel_id) {
       const chan = this.edges.filter(edge => edge.channel_id === channel_id)
       if (chan.length) {
         this.selectedChannel = chan[0]
       }
-      console.log("New selected Channel", this.selectedChannel, channel_id);
+    },
+    async showPreview(pubKey) {
+      this.previewNode = pubKey;
+      await this.calculatePreviewArcs();
+    },
+    async hightlightChannel(channelId) {
+      await this.hightlightArc(channelId);
     },
     async selectNode(pub_key) {
-      console.log("Pusgb: ", pub_key)
       this.selectedNode = pub_key;
       await this.recalculateArcs();
-    },
-    async previewNode(pubKey) {
-
     },
     async recalculateArcs() {
       const arcRes = await axios.post('http://localhost:3000/api/networkmap/arcs', { publicKey: this.selectedNode })
@@ -219,6 +228,7 @@ export default Vue.extend({
       
       const arcs = arcRes.data.mapChannels.reduce((acc, edge) => {
         if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
+          this.activeChannels.push(edge)
           acc.push({
             source: theseNodes[edge.node1_pub].position,
             target: theseNodes[edge.node2_pub].position,
@@ -268,11 +278,14 @@ export default Vue.extend({
       if (this.map.getLayer('arc')) {
         this.map.removeLayer('arc')
       }
+      if (this.map.getLayer('arc-highlight')) {
+          this.map.removeLayer('arc-highlight')
+        }
       const arclayer = new MapboxLayer({
         id: 'arc',
         type: ArcLayer,
         data: this.arcs,
-        opacity: 0.1,
+        opacity: 1,
         getColor: [0,0,0],
         getSourcePosition: d => d.source,
         getTargetPosition: d => d.target,
@@ -280,6 +293,76 @@ export default Vue.extend({
       })
 
       this.map.addLayer(arclayer)
+    },
+    async calculatePreviewArcs() {
+        const arcRes = await axios.post('http://localhost:3000/api/networkmap/arcs', { publicKey: this.previewNode })
+
+        const theseNodes = this.nodes;
+        
+        const arcs = arcRes.data.mapChannels.reduce((acc, edge) => {
+          if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
+            acc.push({
+              source: theseNodes[edge.node1_pub].position,
+              target: theseNodes[edge.node2_pub].position,
+              value: parseInt(edge.capacity)
+            });
+          } else if (this.previewNode === edge.node1_pub || this.previewNode === edge.node2_pub) {
+            acc.push({
+              source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
+              target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
+              value: parseInt(edge.capacity)
+            });
+          }
+          return acc;
+        }, []);
+
+        if (this.map.getLayer('arc-preview')) {
+          this.map.removeLayer('arc-preview')
+        }
+        if (this.map.getLayer('arc-highlight')) {
+          this.map.removeLayer('arc-highlight')
+        }
+        const arclayer = new MapboxLayer({
+          id: 'arc-preview',
+          type: ArcLayer,
+          data: arcs,
+          opacity: 0.1,
+          getColor: [129, 207, 224],
+          getSourcePosition: d => d.source,
+          getTargetPosition: d => d.target,
+          getWidth: 2
+        })
+
+        this.map.addLayer(arclayer)
+    },
+    async hightlightArc(channelId) {
+
+        const arcs = this.activeChannels.reduce((acc, edge) => {
+          if (edge.channel_id == channelId) {
+            acc.push({
+              source: this.nodes[edge.node1_pub].position,
+              target: this.nodes[edge.node2_pub].position,
+              value: parseInt(edge.capacity)
+            });
+          }
+          return acc;
+        }, []);
+
+        if (this.map.getLayer('arc-highlight')) {
+          this.map.removeLayer('arc-highlight')
+        }
+        const arclayer = new MapboxLayer({
+          id: 'arc-highlight',
+          type: ArcLayer,
+          data: arcs,
+          opacity: 1,
+          getColor: [129, 207, 224],
+          getSourcePosition: d => d.source,
+          getTargetPosition: d => d.target,
+          getWidth: 8
+        })
+
+        this.map.addLayer(arclayer)
     },
   }
 })
@@ -295,9 +378,16 @@ export default Vue.extend({
     padding: 0px;
     border: solid 1px black;
     .map-search-button {
+      width: 180px;
       position: absolute;
       bottom: 50px;
-      left: 35%;
+      right: 25%;
+    }
+    .map-zoom-button {
+      width: 180px;
+      position: absolute;
+      bottom: 50px;
+      left: 10%;
     }
   }
   #map {
@@ -311,7 +401,8 @@ export default Vue.extend({
   .sidebar-pane {
     position: absolute;
     top: 49px;
-    width: 200px;
+    width: 15%;
+    min-width: 200px;
     height: calc(100vh - 80px);
     right: 0;
     background: rgba(255, 255, 255);

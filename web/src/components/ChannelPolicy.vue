@@ -46,7 +46,6 @@ export default Vue.extend({
         const policy2_res = await axios.post('http://localhost:3000/api/networkmap/policy', { publicKey: this.channel.node2_pub, channelId: this.channel.channel_id })
         this.policy1 = policy1_res.data.policy[0];
         this.policy2 = policy2_res.data.policy[0];
-        console.log("What it is: ", this.policy1, this.policy2)
     },
     methods: {
 
@@ -56,7 +55,7 @@ export default Vue.extend({
 
 <style lang="scss">
 .channel-policy-container {
-    height: 550px;
+    height: calc(100vh - 120px);
     overflow: scroll;
     padding-left: 10px;
     padding-right: 10px;

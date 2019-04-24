@@ -8,9 +8,9 @@
         class="node-tile"
         v-bind:style="{ 'border-left': `solid 6px rgb(${nodes[node].color})`, 'border-right': `solid 6px rgb(${nodes[node].color})` }">
         <div class="node-container">
-            <p><b>Alias:</b>{{nodes[node].alias}}</p>
-            <p><b>Public Key:</b>  {{node.slice(0,5)}}...{{node.slice(-5)}} <i class="fa fa-copy" style="font-size:12px"></i></p>
-            <p><b>Location:</b> {{nodes[node].country}} {{nodes[node].country_flag_emoji}}</p>
+            <p><b>Alias:</b> <span>{{nodes[node].alias}}</span></p>
+            <p><b>Public Key:</b> <span>{{node.slice(0,5)}}...{{node.slice(-5)}} </span></p>
+            <p><b>Location:</b> <span>{{nodes[node].country_flag_emoji}} {{nodes[node].country}}</span></p>
         </div>
     </div>
   </div>
@@ -30,7 +30,6 @@ export default Vue.extend({
     },
     mounted() {
         if (this.nodes) {   
-            console.log("WE get here?", this.nodes)
             this.keyList = Object.keys(this.nodes);
         } else {
             this.keyList = ['testing']
@@ -38,7 +37,6 @@ export default Vue.extend({
     },
     watch: { 
         nodes: function(newVal, oldVal) { // watch it
-            console.log('Prop changed: ', newVal, ' | was: ', oldVal)
             this.keyList = Object.keys(newVal);
         }
     },
@@ -53,7 +51,7 @@ export default Vue.extend({
 
     top: 49px;
     right: 0px;
-    width: 200px;
+    width: 100%;
     height: calc(100vh - 150px);
     overflow: scroll;
     background: rgba(255, 255, 255);
@@ -72,15 +70,23 @@ export default Vue.extend({
             padding-left: 15px;
         }
         .node-container {
+            margin-top: 10px;
             text-align: left;
-            padding-left: 15px;
+            padding-left: 10px;
+            padding-right: 15px;
+            cursor: pointer;
             * {
                 margin: 0;
                 padding: 2px;
+            } 
+            span {
+                float: right;
             }
         }
         .node-container:hover {
             padding-left: 20px;
+            padding-right: 5px;
+            
         }
 
     }

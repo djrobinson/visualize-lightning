@@ -5,7 +5,8 @@
         <div class="row">
             <ChannelList 
                 v-bind:channels="channels"
-                v-on:select-channelid="$emit('select-channelid', $event)">
+                v-on:select-channelid="$emit('select-channelid', $event)"
+                v-on:highlight-channelid="$emit('highlight-channelid', $event)">
             </ChannelList>
         </div>
   </div>
@@ -27,7 +28,7 @@ export default Vue.extend({
         }
     },
     mounted() {
-        console.log("What it is: ", this.channels)
+
     },
     methods: {
         selectChannel(channelId) {
