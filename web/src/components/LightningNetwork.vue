@@ -1,21 +1,45 @@
 <template>
 
-    <div class="canvas-container">
-      <div id="map"></div>
-      <!-- <ChannelList
+  <div class="canvas-container">
+    <div id="map"></div>
+    <div class="sidebar-pane">
+      <div class="tab-row">
+        <div 
+          v-on:click="changeTabs()"
+          v-bind:class="{ active: !activeMapSearch }"
+          class="tab">
+          <p>All Nodes</p>
+        </div>
+        <div 
+          v-bind:class="{ active: activeMapSearch }"
+          v-on:click="changeTabs()"
+          class="tab">
+          <p>Map Search</p>
+        </div>
+      </div>
+      <ChannelList
         v-bind:channels="activeChannels"
         v-on:select-channelid="selectChannel($event)"
-      /> -->
+      />
       <NodeList 
-        v-if="nodes"
+        v-if="nodes && !activeMapSearch"
         v-on:select-pubkey="selectNode($event)"
         v-bind:nodes="nodes"
+        title="hotdog"
       />
-      <ChannelExplorer
-        v-if="selectedChannel"
-        v-bind:channel="selectedChannel"
+      <NodeList 
+        v-if="nodesInView && activeMapSearch"
+        v-on:select-pubkey="selectNode($event)"
+        v-bind:nodes="nodesInView"
+        title="not hotdog"
       />
     </div>
+    <button v-on:click="setNodesInView" class="map-search-button buttom">Search Here</button>
+    <ChannelExplorer
+      v-if="selectedChannel"
+      v-bind:channel="selectedChannel"
+    />
+  </div>
 
 </template>
 <script>
@@ -42,21 +66,15 @@ export default Vue.extend({
           nodes: null,
           edges: null,
           map: null,
+          activeNodes: [],
           activeChannels: [],
           nodesInView: [],
           popups: [],
           selectedNode: null,
           selectedChannel: null,
+          activeMapSearch: false,
           mapCenter: [55,40],
-          standardZoom: 1.1,
-          INITIAL_VIEW_STATE: {
-            longitude: -100,
-            latitude: 40.7,
-            zoom: 3,
-            maxZoom: 15,
-            pitch: 30,
-            bearing: 30
-          }
+          standardZoom: 1,
       }
   },
   async mounted(){
@@ -64,13 +82,11 @@ export default Vue.extend({
       const response = await axios.get('http://localhost:3000/api/networkmap/ips')
       this.selectedNode = '038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9';
       this.popups = [];
-      console.log("Working with new response: ", response);
       const northpole_res = await axios.get('http://localhost:3000/api/networkmap/northpole')
-      console.log("What is north pole", northpole_res);
       const ipNodes = response.data.nodes.reduce((acc, node) => {
         if (!acc[node.public_key] && parseFloat(node.longitude) && parseFloat(node.latitude)) {
           acc[node.public_key] = {
-            public_key: node.public_key,
+            publicKey: node.public_key,
             position: [parseFloat(node.longitude), parseFloat(node.latitude)],
             color:  this._hexToRgbNew(node.color),
             radius: 1000,
@@ -86,10 +102,11 @@ export default Vue.extend({
       const northpoleNodes = northpole_res.data.nodes.reduce((acc, node, i) => {
         if (!acc[node.public_key]) {
           acc[node.public_key] = {
-            public_key: node.public_key,
+            publicKey: node.public_key,
             position: [-165 + (i * 0.5), 70 + (1 * (i % 7))],
             color:  this._hexToRgbNew(node.color),
             radius: 1000,
+            radiusScale: 3,
             alias: node.alias,
           }
         };
@@ -117,12 +134,11 @@ export default Vue.extend({
           id: 'scatter',
           type: ScatterplotLayer,
           getRadius: d => d.radius,
-          getColor: d =>d.color,
-          radiusMinPixels: 3,
+          getColor: d => d.color,
+          radiusMinPixels: 4,
           data: this.scatterData,
         })
         map.addLayer(scatterplotlayer)
-        this.recalculateArcs()
         this._mapLoaded(map)
       });
   },
@@ -140,47 +156,23 @@ export default Vue.extend({
       return color;
     },
     _mapLoaded(map) {
-      const popups = this.popups;
       const scatterData = this.scatterData;
-      const boundSetNodes = this.setNodesInView.bind(this);
-       map.on('click', function (e) {
-        console.log('reg click')
-        const currZoom = map.getZoom();
-        if (currZoom === 7) {
-          this.nodesInView = []
-          map.setZoom(this.standardZoom);
-          map.setCenter(this.mapCenter);
-          if (this.popups) {
-            this.popups.forEach(popup => popup.remove());
-          }
-        } else {
-          map.setZoom(7);
-          map.setCenter(e.lngLat);
-          const bounds = map.getBounds();
-          boundSetNodes(bounds);
-          this.popups = popups;
-        }
-      });
+      const mapCenter = this.mapCenter;
+      this.setNodesInView();
     },
-    setNodesInView(bounds) {
-      this.nodesInView = this.scatterData.filter(node => {
+    changeTabs() {
+      this.activeMapSearch = !this.activeMapSearch;
+    },
+    setNodesInView() {
+      const bounds = this.map.getBounds() 
+      this.nodesInView = this.scatterData.reduce((acc, node) => {
         if (bounds._sw.lng < node.position[0] && node.position[0] < bounds._ne.lng && bounds._sw.lat < node.position[1] && node.position[1] < bounds._ne.lat) {
           const currentNode = node;
-            if (currentNode && currentNode.position) {
-              var popup = new mapboxgl.Popup({closeOnClick: false})
-              .setLngLat(currentNode.position)
-              .setHTML(`
-                <p>IP: ${currentNode.ip || ''}</p>
-                <p>City: ${currentNode.city}</p>
-              `)
-              .addTo(this.map);
-              this.popups.push(popup);
-            }
-          return true
-        } else {
-          return false
-        };
-      });
+          acc[node.publicKey] = node;
+        }
+        return acc;
+      }, {});
+      console.log("What is nodesInView", this.nodesInView);
     },
     selectChannel(channel_id) {
       const chan = this.edges.filter(edge => edge.channel_id === channel_id)
@@ -202,7 +194,6 @@ export default Vue.extend({
       this.edges = arcRes.data.mapChannels;
       
       const arcs = arcRes.data.mapChannels.reduce((acc, edge) => {
-
         if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
           acc.push({
             source: theseNodes[edge.node1_pub].position,
@@ -219,7 +210,35 @@ export default Vue.extend({
         }
         return acc;
       }, []);
-      
+
+      const activeNodes = this.edges.reduce((acc, edge) => {
+        if (acc.indexOf(edge.node1_pub) === -1 && this.nodes[edge.node2_pub]) {
+          acc.push(this.nodes[edge.node1_pub]);
+        }
+        if (acc.indexOf(edge.node2_pub) === -1 && this.nodes[edge.node2_pub]) {
+          acc.push(this.nodes[edge.node2_pub]);
+        }
+        return acc;
+      }, []);
+
+      if (this.map.getLayer('scatter-active')) {
+        this.map.removeLayer('scatter-active')
+      }
+      if (activeNodes.length) {
+        console.log("What active nodes", activeNodes)
+        const scatterplotActive = new MapboxLayer({
+          id: 'scatter-active',
+          type: ScatterplotLayer,
+          stroked: true,
+          getRadius: d => d.radius,
+          getColor: d => d.color,
+          radiusMinPixels: 6,
+          data: activeNodes,
+        })
+        this.map.addLayer(scatterplotActive)
+      }
+
+      console.log("What are active nodes: ", activeNodes);
 
       const scale = scaleQuantile()
         .domain(arcs.map(a => Math.abs(a.value)))
@@ -232,8 +251,6 @@ export default Vue.extend({
       if (this.map.getLayer('arc')) {
         this.map.removeLayer('arc')
       }
-      this.map.setZoom(this.standardZoom);
-      this.map.setCenter(this.mapCenter);
       const arclayer = new MapboxLayer({
         id: 'arc',
         type: ArcLayer,
@@ -260,6 +277,11 @@ export default Vue.extend({
     margin: 0px;
     padding: 0px;
     border: solid 1px black;
+    .map-search-button {
+      position: absolute;
+      bottom: 50px;
+      left: 45%;
+    }
   }
   #map {
     width: 100%;
@@ -268,6 +290,39 @@ export default Vue.extend({
   }
   canvas {
     left: 0;
+  }
+  .sidebar-pane {
+    position: absolute;
+    top: 49px;
+    width: 200px;
+    height: calc(100vh - 80px);
+    right: 0;
+    background: rgba(255, 255, 255);
+    .tab-row {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      .tab {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: lightgray;
+      }
+      .tab:hover {
+        font-weight: 700;
+        color: gray;
+      }
+      .tab.active{
+        color: black;
+        font-weight: 900;
+      }
+      .tab.active:hover {
+        font-weight: 700;
+      }
+
+
+    }
   }
   #marker {
   // background-image: url('https://docs.mapbox.com/mapbox-gl-js/assets/washington-monument.jpg');

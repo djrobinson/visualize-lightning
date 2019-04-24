@@ -1,14 +1,13 @@
 <template>
   <div class="node-list-container">
+    <h5>{{title}}</h5>
     <div 
-        v-for="node in first100" :key="node"
-        @mouseover="$emit('select-pubkey', node)"
-        class="node-tile"
-    >
+        v-for="node in keyList" :key="node"
+        v-on:click="$emit('select-pubkey', node)"
+        class="node-tile">
         <ul>
-            <li>{{nodes[node].alias}}</li>
-            <li>Public Key: {{node.slice(0,5)}}...{{node.slice(-5)}}</li>
-            <li>{{nodes[node].region}}</li>
+            <li>{{nodes[node].alias}}
+            <li>{{node.slice(0,5)}}...{{node.slice(-5)}}</li>
         </ul>
     </div>
   </div>
@@ -18,7 +17,7 @@ import Vue from "vue";
 
 export default Vue.extend({
     name: 'NodeList',
-    props: ['nodes'],
+    props: ['nodes', 'title'],
     data(){
         console.log("Sanity check")
         return {
@@ -27,15 +26,18 @@ export default Vue.extend({
         }
     },
     mounted() {
-        console.log("why does this need to cshange to change propss")
-        if (this.nodes) {
+        if (this.nodes) {   
+            console.log("WE get here?", this.nodes)
             this.keyList = Object.keys(this.nodes);
-            this.first100 = this.keyList.slice(0, 99);
         } else {
             this.keyList = ['testing']
         }
-        
-
+    },
+    watch: { 
+        nodes: function(newVal, oldVal) { // watch it
+            console.log('Prop changed: ', newVal, ' | was: ', oldVal)
+            this.keyList = Object.keys(newVal);
+        }
     },
     methods: {
         
@@ -49,9 +51,9 @@ export default Vue.extend({
     top: 49px;
     right: 0px;
     width: 200px;
-    height: calc(100vh - 50px);
+    height: calc(80vh - 50px);
     overflow: scroll;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255);
     .node-tile {
         ul {
             list-style: none;

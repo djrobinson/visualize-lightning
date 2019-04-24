@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { Server } from './app';
 import { isTestEnv } from './env';
 import { logger } from './services';
-import { Lightning, LnRpcSubscriptionManager } from './services/lnd';
+import { Lightning } from './services/lnd';
 
 dotenv.config();
 
