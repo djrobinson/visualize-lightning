@@ -1,4 +1,4 @@
-import LightningNodeData from '../data/LightningNodeData';
+import LightningNodeData from '../data/lightningNodeData';
 
 class LightningNode {
   publicKey: string;
