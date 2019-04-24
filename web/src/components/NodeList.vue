@@ -4,15 +4,14 @@
     <div 
         v-for="node in keyList" :key="node"
         v-on:click="$emit('select-pubkey', node)"
+        @mouseover="$emit('preview-node', node)""
         class="node-tile"
         v-bind:style="{ 'border-left': `solid 6px rgb(${nodes[node].color})`, 'border-right': `solid 6px rgb(${nodes[node].color})` }">
-        <div class="flag">
-            <h5>{{nodes[node].country_flag_emoji}}</h5>
+        <div class="node-container">
+            <p><b>Alias:</b>{{nodes[node].alias}}</p>
+            <p><b>Public Key:</b>  {{node.slice(0,5)}}...{{node.slice(-5)}} <i class="fa fa-copy" style="font-size:12px"></i></p>
+            <p><b>Location:</b> {{nodes[node].country}} {{nodes[node].country_flag_emoji}}</p>
         </div>
-        <ul>
-            <li>{{nodes[node].alias}}
-            <li><i class="fa fa-copy" style="font-size:12px"></i>  {{node.slice(0,5)}}...{{node.slice(-5)}}</li>
-        </ul>
     </div>
   </div>
 </template>
@@ -60,6 +59,7 @@ export default Vue.extend({
     background: rgba(255, 255, 255);
 
     .node-tile {
+        margin-top: 3px;
         .flag {
             width: 20%;
         }
@@ -71,6 +71,18 @@ export default Vue.extend({
             text-align: left;
             padding-left: 15px;
         }
+        .node-container {
+            text-align: left;
+            padding-left: 15px;
+            * {
+                margin: 0;
+                padding: 2px;
+            }
+        }
+        .node-container:hover {
+            padding-left: 20px;
+        }
+
     }
 
     .node-tile:hover {

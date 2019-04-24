@@ -1,6 +1,6 @@
 <template>
   <div class="channel-list-container">
-    <h1>Channel List</h1>
+    <h5>Channel List</h5>
     <div 
         v-for="channel in channels" :key="channel.channel_id" 
         v-on:click="$emit('select-channelid', channel.channel_id)"
@@ -36,7 +36,6 @@ export default Vue.extend({
 
 <style lang="scss">
 .channel-list-container {
-    height: calc(100vh - 150px);
     background: rgba(255, 255, 255);
     overflow: scroll;
     .channel-tile {

@@ -2,6 +2,7 @@ import { LightningNode as LightningNodeType, NodeAddress } from '@radar/lnrpc';
 import { NextFunction, Request, Response } from 'express';
 import ChannelEdge from '../../objects/ChannelEdge';
 import LightningNode from '../../objects/LightningNode';
+import RoutingPolicy from '../../objects/RoutingPolicy';
 import { logger } from '../../services';
 import { BaseRoute } from '../route';
 
@@ -32,6 +33,7 @@ export class NetworkMapRoute extends BaseRoute {
     this.router.get('/ips', this.ips);
     this.router.get('/northpole', this.northPole);
     this.router.post('/arcs', this.activeChannels);
+    this.router.post('/policy', this.getChannelPolicy);
   }
 
   static get router() {
@@ -73,6 +75,25 @@ export class NetworkMapRoute extends BaseRoute {
       const publicKey = req.body.publicKey;
       const mapChannels = await ChannelEdge.getActiveArcs(publicKey);
       res.json({ mapChannels });
+    } catch (err) {
+      res.status(400).json({ error: err });
+    }
+    next();
+  }
+
+  public async getChannelPolicy(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const publicKey = req.body.publicKey;
+      const channelId = req.body.channelId;
+      const policy = await RoutingPolicy.getByChannelAndPubKey(
+        channelId,
+        publicKey,
+      );
+      res.json({ policy });
     } catch (err) {
       res.status(400).json({ error: err });
     }

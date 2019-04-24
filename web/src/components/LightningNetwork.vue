@@ -26,6 +26,7 @@
       <NodeList 
         v-if="!selectedNode"
         v-on:select-pubkey="selectNode($event)"
+        v-on:preview-node="previewNode($event)"
         v-bind:nodes="nodesInView"
       />
       <ChannelExplorer
@@ -99,7 +100,9 @@ export default Vue.extend({
             ip: node.ip_address,
             city: node.city,
             country: node.country_name,
-            region: node.region_name
+            region: node.region_name,
+            country_flag: node.country_flag,
+            country_flag_emoji: node.country_flag_emoji
           }
         };
         return acc;
@@ -205,6 +208,9 @@ export default Vue.extend({
       this.selectedNode = pub_key;
       await this.recalculateArcs();
     },
+    async previewNode(pubKey) {
+
+    },
     async recalculateArcs() {
       const arcRes = await axios.post('http://localhost:3000/api/networkmap/arcs', { publicKey: this.selectedNode })
       this.activeChannels = [];
@@ -251,7 +257,7 @@ export default Vue.extend({
           stroked: true,
           getRadius: d => d.radius,
           getColor: d => d.color,
-          radiusMinPixels: 6,
+          radiusMinPixels: 7,
           data: activeNodes,
         })
         this.map.addLayer(scatterplotActive)
@@ -259,13 +265,6 @@ export default Vue.extend({
 
       console.log("What are active nodes: ", activeNodes);
 
-      const scale = scaleQuantile()
-        .domain(arcs.map(a => Math.abs(a.value)))
-
-      arcs.forEach(a => {
-        a.gain = Math.sign(a.value);
-        a.quantile = scale(Math.abs(a.value));
-      });
       this.arcs = arcs;
       if (this.map.getLayer('arc')) {
         this.map.removeLayer('arc')

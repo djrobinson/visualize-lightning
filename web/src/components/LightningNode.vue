@@ -1,6 +1,5 @@
 <template>
   <div class="lightning-node-container">
-      <h1>test</h1>
     <p>{{node}}</p>
   </div>
 </template>

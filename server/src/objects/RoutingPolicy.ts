@@ -2,6 +2,7 @@ import RoutingPolicyData from '../data/routingPolicyData';
 
 export default class RoutingPolicy {
   policyId: string;
+  policyChannelId: string;
   policyOwnerPublicKey: string;
   timeLockDelta: number;
   minHtlc: string;
@@ -27,5 +28,14 @@ export default class RoutingPolicy {
   upsertRecord() {
     const data = new RoutingPolicyData();
     data.upsert(this);
+  }
+
+  public static async getByChannelAndPubKey(
+    channelId: string,
+    publicKey: string,
+  ) {
+    const data = new RoutingPolicyData();
+    const res = await data.selectByChannelAndPubKey(channelId, publicKey);
+    return res;
   }
 }

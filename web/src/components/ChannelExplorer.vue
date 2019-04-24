@@ -30,7 +30,6 @@ export default Vue.extend({
     methods: {
         selectChannel(channelId) {
             this.selectedChannel = channelId;
-
         }
     } 
 })

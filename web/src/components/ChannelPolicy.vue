@@ -23,10 +23,14 @@ export default Vue.extend({
     data(){
         console.log("Sanity check")
         return {
+            policy1: null,
+            policy2: null
         }
     },
-    mounted() {
-        console.log("What it is: ", this.channels)
+    async mounted() {
+        const policy1 = await axios.post('http://localhost:3000/api/networkmap/policy', { publicKey: this.channel.node1_pub, channelId: this.channel.channel_id })
+        const policy2 = await axios.post('http://localhost:3000/api/networkmap/policy', { publicKey: this.channel.node2_pub, channelId: this.channel.channel_id })
+        console.log("What it is: ", policy1, policy2)
     },
     methods: {
 

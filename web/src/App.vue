@@ -13,7 +13,7 @@ body {
   margin: 0;
   padding: 0;
   p, li {
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 .button {

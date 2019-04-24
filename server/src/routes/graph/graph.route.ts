@@ -108,6 +108,7 @@ export class GraphRoute extends BaseRoute {
         node1Policy.policyOwnerPublicKey = edge.node1Pub;
         if (edge.node1Policy) {
           node1Policy.policyId = `${edge.channelId}-${edge.node1Pub}`;
+          node1Policy.policyChannelId = edge.channelId;
           node1Policy.timeLockDelta = edge.node1Policy.timeLockDelta || 0;
           node1Policy.minHtlc = edge.node1Policy.minHtlc;
           node1Policy.feeBaseMsat = edge.node1Policy.feeBaseMsat;
@@ -119,6 +120,7 @@ export class GraphRoute extends BaseRoute {
         node2Policy.policyOwnerPublicKey = edge.node2Pub;
         if (edge.node2Policy) {
           node2Policy.policyId = `${edge.channelId}-${edge.node2Pub}`;
+          node2Policy.policyChannelId = edge.channelId;
           node2Policy.timeLockDelta = edge.node2Policy.timeLockDelta || 0;
           node2Policy.minHtlc = edge.node2Policy.minHtlc;
           node2Policy.feeBaseMsat = edge.node2Policy.feeBaseMsat;
