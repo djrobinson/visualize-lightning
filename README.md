@@ -26,16 +26,17 @@ A simple network visualizer for the Lightning Network that allows users to explo
 
 **Downloads**
 
-1. Install LND using the btcd operating mode according to the tutorial [here](https://dev.lightning.community/guides/installation/)
-2. `git clone https://github.com/djrobinson/visualize-lightning.git`
-3. Open up 2 terminals
+1.  Install LND using the btcd operating mode according to the tutorial [here](https://dev.lightning.community/guides/installation/)
+2.  `git clone https://github.com/djrobinson/visualize-lightning.git`
+3.  Open up 2 terminals
 
 **Terminal 1**
-4. `cd visualize-lightning/server`
-5. `yarn`
-6. `touch .env`
-7. Sign up for a [IPStack](https://ipstack.com) API Key
-8. Update the .env file with your keys & certs, should look like:
+
+4.  `cd visualize-lightning/server`
+5.  `yarn`
+6.  `touch .env`
+7.  Sign up for a [IPStack](https://ipstack.com) API Key
+8.  Update the .env file with your keys & certs, should look like:
 ```
 SERVER_PORT=3000
 LND_URL=localhost:10009
@@ -43,16 +44,18 @@ LND_MACAROON_PATH=/path/to/a/file.macaroon
 LND_CERT_PATH=/path/to/a/tls.cert
 IPSTACK_API_KEY=apikeyfromipstack
 ```
-9. `knex migrate:latest --env development`
-10. `yarn start`
+9.  `knex migrate:latest --env development`
+10.  `yarn start`
 
 **Terminal 2**
-11. `cd visualize-lightning/web`
-12. `yarn`
-13. `yarn serve`
+
+11.  `cd visualize-lightning/web`
+12.  `yarn`
+13.  `yarn serve`
 
 **Populate DB with LND `describegraph` info & gather IP locations**
-14. Open the app at http://localhost:8080
-15. Clic the "Data" tab
-16. Click the "Describe Graph" button
-17. Go back to the map, verify that nodes and channels show up on the map and in the side pane
+
+14.  Open the app at http://localhost:8080
+15.  Click the "Data" tab
+16.  Click the "Describe Graph" button
+17.  Go back to the map, verify that nodes and channels show up on the map and in the side pane
