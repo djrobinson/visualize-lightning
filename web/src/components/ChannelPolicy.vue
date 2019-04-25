@@ -55,7 +55,7 @@ export default Vue.extend({
 
 <style lang="scss">
 .channel-policy-container {
-    height: calc(100vh - 120px);
+    height: calc(100vh - 150px);
     overflow: scroll;
     padding-left: 10px;
     padding-right: 10px;

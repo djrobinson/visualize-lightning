@@ -380,7 +380,7 @@ export default Vue.extend({
   }
   #map {
     width: 100%;
-    height: 100vh;;
+    height: calc(100vh + 10px);
     margin-top: -10px;
   }
   canvas {

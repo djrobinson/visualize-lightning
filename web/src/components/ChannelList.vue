@@ -38,10 +38,11 @@ export default Vue.extend({
 <style lang="scss">
 .channel-list-container {
     background: rgba(255, 255, 255);
+    
 
     .scroller {
+        height: calc(100vh - 400px);
         overflow: scroll;
-        height: 400px;
         width: 100%;
         .channel-tile {
             border-top: solid 1px black;
