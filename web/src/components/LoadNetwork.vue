@@ -1,7 +1,7 @@
 <template>
   <div class="network-loading-container">
       <h1>Load the Network</h1>
-      <button v-on:click="loadDescribeGraph">Describe Graph</button>
+      <button class="button" v-on:click="loadDescribeGraph">Describe Graph</button>
   </div>
 </template>
 <script>
@@ -29,4 +29,10 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
+    .network-loading-container {
+        padding-top: 100px;
+    }
+    .button {
+        margin-top: 10px;
+    }
 </style>

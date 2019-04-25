@@ -95,9 +95,10 @@ export default class LightningNodeData extends BaseDataAccess {
   }
   public async selectNorthPoleNodes() {
     const res = await knex
-      .select('public_key', 'ip_address', 'alias', 'color')
-      .from('lightning_nodes')
-      .where('ip_address', null);
+      .select('l.public_key', 'l.ip_address', 'l.alias', 'l.color')
+      .from('lightning_nodes AS l')
+      .andWhere('l.ip_address', null)
+      
     return res;
   }
 }

@@ -128,6 +128,7 @@ export default Vue.extend({
       const npVals = Object.values(northpoleNodes);
       const allNodes = ipVals.concat(npVals);
       this.nodes = {...ipNodes, ...northpoleNodes};
+      console.log("What is nodes", this.nodes);
       this.nodesInView = this.nodes;
       this.scatterData = allNodes;
 
@@ -223,22 +224,14 @@ export default Vue.extend({
       const arcRes = await axios.post('http://localhost:3000/api/networkmap/arcs', { publicKey: this.selectedNode })
       this.activeChannels = [];
 
-      const theseNodes = this.nodes;
       this.edges = arcRes.data.mapChannels;
       
       const arcs = arcRes.data.mapChannels.reduce((acc, edge) => {
-        if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
+        if ((this.previewNode === edge.node1_pub || this.previewNode === edge.node2_pub) && (this.nodes[edge.node1_pub] && this.nodes[edge.node2_pub])) {
           this.activeChannels.push(edge)
           acc.push({
-            source: theseNodes[edge.node1_pub].position,
-            target: theseNodes[edge.node2_pub].position,
-            value: parseInt(edge.capacity)
-          });
-        } else if (this.selectedNode === edge.node1_pub || this.selectedNode === edge.node2_pub) {
-          this.activeChannels.push(edge)
-          acc.push({
-            source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
-            target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
+            source: this.nodes[edge.node1_pub].position,
+            target: this.nodes[edge.node2_pub].position,
             value: parseInt(edge.capacity)
           });
         }
@@ -296,20 +289,15 @@ export default Vue.extend({
     },
     async calculatePreviewArcs() {
         const arcRes = await axios.post('http://localhost:3000/api/networkmap/arcs', { publicKey: this.previewNode })
-
-        const theseNodes = this.nodes;
         
+        const theseNodes = this.nodes;
+
         const arcs = arcRes.data.mapChannels.reduce((acc, edge) => {
-          if ((theseNodes[edge.node1_pub] && theseNodes[edge.node2_pub]) && (!edge.node2_longitude || !edge.node1_longitude)) {
+          if ((this.previewNode === edge.node1_pub || this.previewNode === edge.node2_pub) && (this.nodes[edge.node1_pub] && this.nodes[edge.node2_pub])) {
+
             acc.push({
               source: theseNodes[edge.node1_pub].position,
               target: theseNodes[edge.node2_pub].position,
-              value: parseInt(edge.capacity)
-            });
-          } else if (this.previewNode === edge.node1_pub || this.previewNode === edge.node2_pub) {
-            acc.push({
-              source: [parseFloat(edge.node1_longitude), parseFloat(edge.node1_latitude)],
-              target: [parseFloat(edge.node2_longitude), parseFloat(edge.node2_latitude)],
               value: parseInt(edge.capacity)
             });
           }

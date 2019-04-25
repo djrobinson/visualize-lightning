@@ -2,8 +2,8 @@
 exports.up = function(knex, Promise) {
     return knex.schema.createTable('routing_policies', function(table) {
         table.string('policy_id').unique().primary();
-        table.string('policy_owner_public_key').references('public_key').inTable('lightning_nodes');
-        table.string('policy_channel_id').references('channel_id').inTable('channel_edges');
+        table.string('policy_owner_public_key');
+        table.string('policy_channel_id');
         table.integer('time_lock_delta');
         table.string('min_htlc');
         table.string('fee_base_msat');
