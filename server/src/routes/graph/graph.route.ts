@@ -61,27 +61,27 @@ export class GraphRoute extends BaseRoute {
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
 
-      const geoNodes = await this.locateIpAddresses(nodes);
+      // const geoNodes = await this.locateIpAddresses(nodes);
 
-      geoNodes.forEach((geoRes: any) => {
-        const geo = geoRes.data;
-        const ipGeoInstance = new IpGeoLookup();
-        ipGeoInstance.ip = geo['ip'];
-        ipGeoInstance.type = geo['type'];
-        ipGeoInstance.continentCode = geo['continent_code'];
-        ipGeoInstance.continentName = geo['continent_name'];
-        ipGeoInstance.countryCode = geo['country_code'];
-        ipGeoInstance.countryName = geo['country_name'];
-        ipGeoInstance.regionCode = geo['region_code'];
-        ipGeoInstance.regionName = geo['region_name'];
-        ipGeoInstance.city = geo['city'];
-        ipGeoInstance.zip = geo['zip'];
-        ipGeoInstance.latitude = geo['latitude'];
-        ipGeoInstance.longitude = geo['longitude'];
-        ipGeoInstance.countryFlag = geo['location']['country_flag'];
-        ipGeoInstance.countryFlagEmoji = geo['location']['country_flag_emoji'];
-        ipGeoInstance.upsertRecord();
-      });
+      // geoNodes.forEach((geoRes: any) => {
+      //   const geo = geoRes.data;
+      //   const ipGeoInstance = new IpGeoLookup();
+      //   ipGeoInstance.ip = geo['ip'];
+      //   ipGeoInstance.type = geo['type'];
+      //   ipGeoInstance.continentCode = geo['continent_code'];
+      //   ipGeoInstance.continentName = geo['continent_name'];
+      //   ipGeoInstance.countryCode = geo['country_code'];
+      //   ipGeoInstance.countryName = geo['country_name'];
+      //   ipGeoInstance.regionCode = geo['region_code'];
+      //   ipGeoInstance.regionName = geo['region_name'];
+      //   ipGeoInstance.city = geo['city'];
+      //   ipGeoInstance.zip = geo['zip'];
+      //   ipGeoInstance.latitude = geo['latitude'];
+      //   ipGeoInstance.longitude = geo['longitude'];
+      //   ipGeoInstance.countryFlag = geo['location']['country_flag'];
+      //   ipGeoInstance.countryFlagEmoji = geo['location']['country_flag_emoji'];
+      //   ipGeoInstance.upsertRecord();
+      // });
 
       // TODO: CONVERT TO A BULK UPDATE IF TIME ALLOWS. map instead of forEach, insert all via static method on obj
       nodes.forEach(node => {
@@ -131,7 +131,8 @@ export class GraphRoute extends BaseRoute {
       });
       res.json({ nodes, edges });
     } catch (err) {
-      res.status(400).json({ error: err });
+      logger.error('Describe graph error: ', err);
+      res.status(400).json({ error: 'Error during describe graph mapping' });
     }
     next();
   }
