@@ -1,5 +1,7 @@
 # Visualize Lightning
 
+_Under development. To see working demo, checkout the [alpha-demo tag here](https://github.com/djrobinson/visualize-lightning/tree/alpha-demo)_
+
 ## Lightning Network Visualization & Analysis Tool
 
 A simple network visualizer for the Lightning Network that allows users to explore the network map from the perspective of their own node.

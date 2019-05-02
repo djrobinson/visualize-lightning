@@ -57,34 +57,62 @@ export class GraphRoute extends BaseRoute {
    */
   public async describe(req: Request, res: Response, next: NextFunction) {
     try {
+      const { nodes, edges } = await this.describeGraph();
+      const geoNodes = await this.locateIpAddresses(nodes);
+      this.insertNodeGeolocations(geoNodes);
+      this.insertNodes(nodes);
+      this.insertEdges(edges);
+      res.json({ nodes, edges });
+      next();
+    } catch (err) {
+      logger.error(`Error in describe graph: ${err}`);
+      res.status(400).json({ error: err });
+    }
+    next();
+  }
+
+  private async describeGraph() {
+    try {
       const { nodes, edges } = await Lightning.client.describeGraph();
       logger.info(`[GraphRoute] Graph node count: ${nodes.length}.`);
       logger.info(`[GraphRoute] Graph edge count: ${edges.length}.`);
+      return { nodes, edges };
+    } catch (err) {
+      throw err;
+    }
+  }
 
-      // const geoNodes = await this.locateIpAddresses(nodes);
+  private async insertNodeGeolocations(geoNodes: any[]) {
+    try {
+      // TODO: MAKE THIS A BULK UPDATE
+      geoNodes.forEach((geoRes: any) => {
+        const geo = geoRes.data;
+        const ipGeoInstance = new IpGeoLookup();
+        ipGeoInstance.ip = geo['ip'];
+        ipGeoInstance.type = geo['type'];
+        ipGeoInstance.continentCode = geo['continent_code'];
+        ipGeoInstance.continentName = geo['continent_name'];
+        ipGeoInstance.countryCode = geo['country_code'];
+        ipGeoInstance.countryName = geo['country_name'];
+        ipGeoInstance.regionCode = geo['region_code'];
+        ipGeoInstance.regionName = geo['region_name'];
+        ipGeoInstance.city = geo['city'];
+        ipGeoInstance.zip = geo['zip'];
+        ipGeoInstance.latitude = geo['latitude'];
+        ipGeoInstance.longitude = geo['longitude'];
+        ipGeoInstance.countryFlag = geo['location']['country_flag'];
+        ipGeoInstance.countryFlagEmoji = geo['location']['country_flag_emoji'];
+        ipGeoInstance.upsertRecord();
+      });
+    } catch (err) {
+      throw err;
+    }
+  }
 
-      // geoNodes.forEach((geoRes: any) => {
-      //   const geo = geoRes.data;
-      //   const ipGeoInstance = new IpGeoLookup();
-      //   ipGeoInstance.ip = geo['ip'];
-      //   ipGeoInstance.type = geo['type'];
-      //   ipGeoInstance.continentCode = geo['continent_code'];
-      //   ipGeoInstance.continentName = geo['continent_name'];
-      //   ipGeoInstance.countryCode = geo['country_code'];
-      //   ipGeoInstance.countryName = geo['country_name'];
-      //   ipGeoInstance.regionCode = geo['region_code'];
-      //   ipGeoInstance.regionName = geo['region_name'];
-      //   ipGeoInstance.city = geo['city'];
-      //   ipGeoInstance.zip = geo['zip'];
-      //   ipGeoInstance.latitude = geo['latitude'];
-      //   ipGeoInstance.longitude = geo['longitude'];
-      //   ipGeoInstance.countryFlag = geo['location']['country_flag'];
-      //   ipGeoInstance.countryFlagEmoji = geo['location']['country_flag_emoji'];
-      //   ipGeoInstance.upsertRecord();
-      // });
-
-      // TODO: CONVERT TO A BULK UPDATE IF TIME ALLOWS. map instead of forEach, insert all via static method on obj
-      nodes.forEach(node => {
+  private async insertNodes(nodes: any[]) {
+    try {
+      // TODO: CONVERT TO A BULK UPDATE
+      nodes.forEach((node: any) => {
         const nodeInstance = new LightningNode();
         nodeInstance.publicKey = node.pubKey;
         nodeInstance.ipAddress = node.addresses
@@ -94,8 +122,16 @@ export class GraphRoute extends BaseRoute {
         nodeInstance.color = node.color;
         nodeInstance.upsertRecord();
       });
+    } catch (err) {
+      throw err;
+    }
+    
+  }
 
-      edges.forEach(edge => {
+  private async insertEdges(edges: any[]) {
+    try {
+      // TODO: CONVERT TO A BULK UPDATE
+      edges.forEach((edge: any) => {
         const edgeInstance = new ChannelEdge();
         edgeInstance.channelId = edge.channelId;
         edgeInstance.channelPoint = edge.chanPoint;
@@ -129,12 +165,9 @@ export class GraphRoute extends BaseRoute {
           node2Policy.upsertRecord();
         }
       });
-      res.json({ nodes, edges });
     } catch (err) {
-      logger.error('Describe graph error: ', err);
-      res.status(400).json({ error: 'Error during describe graph mapping' });
+      throw err;
     }
-    next();
   }
 
   // TODO: GET THAT IP RES TYPE ARRAY RETURNING HERE
